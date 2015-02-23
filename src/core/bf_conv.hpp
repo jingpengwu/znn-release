@@ -21,11 +21,12 @@
 
 #include "types.hpp"
 #include "volume_pool.hpp"
+#include "conv_sse.hpp"
 
 namespace zi {
 namespace znn {
 
-inline double3d_ptr bf_conv(double3d_ptr ap, double3d_ptr bp)
+inline double3d_ptr bf_conv_original(double3d_ptr ap, double3d_ptr bp)
 {
     double3d& a = *ap;
     double3d& b = *bp;
@@ -59,6 +60,141 @@ inline double3d_ptr bf_conv(double3d_ptr ap, double3d_ptr bp)
                                 b[wx][wy][wz];
                         }
             }
+
+    return rp;
+}
+
+// convolution using MKL
+inline double3d_ptr bf_conv_mkl_1d(double3d_ptr ap, double3d_ptr bp)
+{
+    double3d& a = *ap;
+    double3d& b = *bp;
+
+    std::size_t ax = a.shape()[0];
+    std::size_t ay = a.shape()[1];
+    std::size_t az = a.shape()[2];
+
+    std::size_t bx = b.shape()[0];
+    std::size_t by = b.shape()[1];
+    std::size_t bz = b.shape()[2];
+
+    std::size_t rx = ax - bx + 1;
+    std::size_t ry = ay - by + 1;
+    std::size_t rz = az - bz + 1;
+
+    double3d_ptr rp = volume_pool.get_double3d(rx,ry,rz);
+    double3d& r = *rp;
+    // initialize r
+    for ( std::size_t x = 0; x < rx; ++x )
+        for ( std::size_t y = 0; y < ry; ++y )
+            for ( std::size_t z = 0; z < rz; ++z )
+                r[x][y][z] = 0;
+
+    // one dimension vector in z direction for SSE, vector and window
+    /*double3d_ptr avp = volume_pool.get_double3d(1,1,az);
+    double3d_ptr bvp = volume_pool.get_double3d(1,1,bz);
+    double3d_ptr rvp = volume_pool.get_double3d(1,1,rz);
+    double3d& av = *avp, bv = *bvp, rv = *rvp;*/
+    double* av = (double *) malloc( sizeof(double) * az );
+    double* bv = (double *) malloc( sizeof(double) * bz );
+    double* rv = (double *) malloc( sizeof(double) * rz );
+
+    for ( std::size_t x = 0; x < rx; ++x)
+        for ( std::size_t y = 0; y < ry; ++y )
+        {
+            for (std::size_t z = 0; z < rz; ++z)
+                rv[z] = r[x][y][z];
+            for ( std::size_t dx = x, wx = bx - 1; dx < bx + x; ++dx, --wx )
+                for ( std::size_t dy = y, wy = by - 1; dy < by + y; ++dy, --wy )
+                {
+                    for (std::size_t z = 0; z < rz; ++z)
+                        for ( std::size_t dz = z, wz = bz - 1; dz < bz + z; ++dz, --wz )
+                        {
+                            av[dz] = a[dx][dy][dz];
+                            bv[wz] = b[wx][wy][wz];
+                        }
+
+                    // 1d convolution of av and bv, output: rv
+                    conv_sse_1d( av, az, bv, bz, rv, rz );
+
+
+                    for ( std::size_t z = 0; z < rz; ++z )
+                    {
+                        r[x][y][z] = rv[z];
+                    }
+                }
+        }
+
+    //delete[] av, bv, rv;
+    free(av);
+    free(bv);
+    free(rv);
+
+    return rp;
+}
+
+// convolution using MKL
+inline double3d_ptr bf_conv(double3d_ptr ap, double3d_ptr bp)
+{
+    double3d& a = *ap;
+    double3d& b = *bp;
+
+    std::size_t ax = a.shape()[0];
+    std::size_t ay = a.shape()[1];
+    std::size_t az = a.shape()[2];
+
+    std::size_t bx = b.shape()[0];
+    std::size_t by = b.shape()[1];
+    std::size_t bz = b.shape()[2];
+
+    std::size_t rx = ax - bx + 1;
+    std::size_t ry = ay - by + 1;
+    std::size_t rz = az - bz + 1;
+
+    double3d_ptr rp = volume_pool.get_double3d(rx,ry,rz);
+    double3d& r = *rp;
+    // initialize r
+    for ( std::size_t x = 0; x < rx; ++x )
+        for ( std::size_t y = 0; y < ry; ++y )
+            for ( std::size_t z = 0; z < rz; ++z )
+                r[x][y][z] = 0;
+
+    // 2D matrix in yz plane
+    double* av = (double *) malloc( sizeof(double) * az * ay );
+    double* bv = (double *) malloc( sizeof(double) * bz * by );
+    double* rv = (double *) malloc( sizeof(double) * rz * ry );
+
+    for ( std::size_t x = 0; x < rx; ++x)
+    {
+        for ( std::size_t y = 0; y < ry; ++y )
+            for (std::size_t z = 0; z < rz; ++z)
+                rv[y*rz + z] = r[x][y][z];
+        for ( std::size_t dx = x, wx = bx - 1; dx < bx + x; ++dx, --wx )
+        {
+            for (std::size_t y = 0; y < ry; ++y)
+                for ( std::size_t dy = y, wy = by - 1; dy < by + y; ++dy, --wy )
+                    for (std::size_t z = 0; z < rz; ++z)
+                        for ( std::size_t dz = z, wz = bz - 1; dz < bz + z; ++dz, --wz )
+                        {
+                            av[dy*az+dz] = a[dx][dy][dz];
+                            bv[dy*bz+wz] = b[wx][wy][wz];
+                        }
+
+            // 2d convolution of av and bv, output: rv
+            //MKL_INT ashape[2] = {ay,az}, bshape[2]={by,bz}, rshape[2]={ry,rz};
+            //conv_sse_2d( av, ashape, bv, bshape, rv, rshape );
+            conv_sse_2d( av, ay, az, bv, by, bz, rv, ry, rz );
+
+            for ( std::size_t y = 0; y < ry; ++y )
+                for ( std::size_t z = 0; z < rz; ++z )
+                    r[x][y][z] = rv[y*rz+z];
+        }
+    }
+
+    //delete[] av, bv, rv;
+    free(av);
+    free(bv);
+    free(rv);
 
     return rp;
 }

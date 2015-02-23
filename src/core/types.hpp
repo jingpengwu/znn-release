@@ -33,9 +33,12 @@ namespace znn {
 
 typedef boost::multi_array<double, 3, allocator< double > >                             double3d ;
 typedef boost::multi_array<std::complex<double>, 3, allocator< std::complex<double> > > complex3d;
+typedef boost::multi_array<double, 1, allocator< double > >				double1d ;
+
 
 typedef boost::shared_ptr<double3d>   double3d_ptr ;
 typedef boost::shared_ptr<complex3d>  complex3d_ptr;
+typedef boost::shared_ptr<double1d>   double1d_ptr ;
 
 // std::allocator is more efficient for basic data structs that will not
 // require fft operations
