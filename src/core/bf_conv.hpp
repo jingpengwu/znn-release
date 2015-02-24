@@ -73,7 +73,7 @@ inline double3d_ptr bf_conv(double3d_ptr ap, double3d_ptr bp)
         return bf_conv_original( ap, bp );
     else
         // 2d filter, use MKL
-        return bf_conv_mkl_1d( ap,  bp);
+        return bf_conv_mkl_2d( ap,  bp);
 
     //return bf_conv_mkl_1d( ap,  bp);
 }
