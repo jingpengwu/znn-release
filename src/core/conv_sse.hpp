@@ -119,7 +119,6 @@ bool conv_mkl_2d(double* x, MKL_INT x1, MKL_INT x0, double* y, MKL_INT y1, MKL_I
 
 
     // extract the center vector
-
     for(int i = 0; i < r1; i++)
         for(int j = 0; j < r0; j++)
         {
@@ -138,63 +137,41 @@ inline double3d_ptr bf_conv_mkl_1d(double3d_ptr ap, double3d_ptr bp)
 
     std::size_t ax = a.shape()[0];
     std::size_t ay = a.shape()[1];
-    std::size_t az = a.shape()[2];
 
     std::size_t bx = b.shape()[0];
     std::size_t by = b.shape()[1];
-    std::size_t bz = b.shape()[2];
 
     std::size_t rx = ax - bx + 1;
     std::size_t ry = ay - by + 1;
-    std::size_t rz = az - bz + 1;
 
-    double3d_ptr rp = volume_pool.get_double3d(rx,ry,rz);
+    double3d_ptr rp = volume_pool.get_double3d(rx,ry,1);
     double3d& r = *rp;
-    // initialize r
-    for ( std::size_t x = 0; x < rx; ++x )
-        for ( std::size_t y = 0; y < ry; ++y )
-            for ( std::size_t z = 0; z < rz; ++z )
-                r[x][y][z] = 0;
 
-    // one dimension vector in z direction for SSE, vector and window
-    double* av = (double *) malloc( sizeof(double) * az );
-    double* bv = (double *) malloc( sizeof(double) * bz );
-    double* rv = (double *) malloc( sizeof(double) * rz );
+    // one dimension vector in y direction for SSE, vector and window
+    double *av=new double[ay], *bv=new double[by], *rv=new double[ry];
 
     for ( std::size_t x = 0; x < rx; ++x)
-        for ( std::size_t y = 0; y < ry; ++y )
         {
-            for (std::size_t z = 0; z < rz; ++z)
-                rv[z] = r[x][y][z];
-            for ( std::size_t dx = x, wx = bx - 1; dx < bx + x; ++dx, --wx )
-                for ( std::size_t dy = y, wy = by - 1; dy < by + y; ++dy, --wy )
-                {
-                    for (std::size_t z = 0; z < rz; ++z)
-                        for ( std::size_t dz = z, wz = bz - 1; dz < bz + z; ++dz, --wz )
-                        {
-                            av[dz] = a[dx][dy][dz];
-                            bv[wz] = b[wx][wy][wz];
-                        }
+            for ( std::size_t i = 0; i < ay; ++i)
+                    av[i] = a[x][i][0];
+            for ( std::size_t i = 0; i < by; ++i)
+                    bv[i] = b[x][i][0];
 
-                    // 1d convolution of av and bv, output: rv
-                    conv_mkl_1d( av, az, bv, bz, rv, rz );
+            // 1d convolution of av and bv, output: rv
+            conv_mkl_1d( av, ay, bv, by, rv, ry );
 
-
-                    for ( std::size_t z = 0; z < rz; ++z )
-                    {
-                        r[x][y][z] = rv[z];
-                    }
-                }
+            for ( std::size_t i = 0; i < ry; ++i )
+            {
+                r[x][i][0] = rv[i];
+            }
         }
 
-    //delete[] av, bv, rv;
-    free(av);
-    free(bv);
-    free(rv);
-
+    // have to free the arrays
+    delete[] av, bv, rv;
     return rp;
 }
 
+// this 2D convolution is unfinished
 // 2D convolution using MKL
 inline double3d_ptr bf_conv_mkl_2d(double3d_ptr ap, double3d_ptr bp)
 {
@@ -222,17 +199,10 @@ inline double3d_ptr bf_conv_mkl_2d(double3d_ptr ap, double3d_ptr bp)
                 r[x][y][z] = 0;
 
     // 2D matrix in yz plane
-    double* av = (double *) malloc( sizeof(double) * az * ay );
-    double* bv = (double *) malloc( sizeof(double) * bz * by );
-    double* rv = (double *) malloc( sizeof(double) * rz * ry );
+    double av[az*ay], bv[bz*by], rv[rz*ry];
 
     for ( std::size_t x = 0; x < rx; ++x)
     {
-        // get 2d image of output
-        for ( std::size_t y = 0; y < ry; ++y )
-            for (std::size_t z = 0; z < rz; ++z)
-                rv[y*rz + z] = r[x][y][z];
-
         for ( std::size_t dx = x, wx = bx - 1; dx < bx + x; ++dx, --wx )
         {
             // get 2d image of input and kernel
