@@ -19,9 +19,13 @@
 #ifndef ZNN_BF_CONV_HPP_INCLUDED
 #define ZNN_BF_CONV_HPP_INCLUDED
 
+#include <iostream>
+#include <boost/timer/timer.hpp>
+
 #include "types.hpp"
 #include "volume_pool.hpp"
-#include "conv_sse.hpp"
+#include "conv_mkl.hpp"
+#include "volume_utils.hpp"
 
 namespace zi {
 namespace znn {
@@ -78,6 +82,33 @@ inline double3d_ptr bf_conv(double3d_ptr ap, double3d_ptr bp)
     //return bf_conv_mkl_1d( ap,  bp);
 }
 
+// test MKL performance, added by Jingpeng Wu
+bool test_mkl(std::size_t ax, std::size_t ay, std::size_t bx, std::size_t by)
+{
+    std::cout<< "start testing MKL ..." <<std::endl;
+    // generate random matrix
+    //std::size_t ax=4000,ay=4000, bx=100, by=100;
+    double3d_ptr ap=volume_pool.get_double3d(ax,ay,1);
+    double3d_ptr bp=volume_pool.get_double3d(bx,by,1);
+    double3d& a=*ap, b=*bp;
+
+    // direct convolution with naive method
+    boost::timer::cpu_timer timer;
+    double3d_ptr rp_n = bf_conv_original(ap, bp);
+    timer.stop();
+    // show time
+    std::cout <<"time cost of naive method: "<< timer.format() << "\n"; // gives the number of seconds, as double.
+
+
+    // convolution with MKL
+    timer.start();
+    double3d_ptr rp_m = bf_conv_mkl_2d(ap, bp);
+    timer.stop();
+    // show timer
+    std::cout <<"time cost of MKL method:   "<< timer.format() << "\n"; // gives the number of seconds, as double.
+
+    return 0;
+}
 
 inline double3d_ptr bf_conv_old(double3d_ptr ap, double3d_ptr bp)
 {
