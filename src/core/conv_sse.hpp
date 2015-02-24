@@ -124,7 +124,7 @@ inline double3d_ptr bf_conv_mkl_1d(double3d_ptr ap, double3d_ptr bp)
     return rp;
 }
 */
-// this 2D convolution is unfinished
+
 // 2D convolution using MKL
 inline double3d_ptr bf_conv_mkl_2d(double3d_ptr ap, double3d_ptr bp)
 {
@@ -161,7 +161,7 @@ inline double3d_ptr bf_conv_mkl_2d(double3d_ptr ap, double3d_ptr bp)
     VSLConvTaskPtr task;
     MKL_INT rank=2;
     int status;
-    int mode = VSL_CONV_MODE_AUTO;
+    int mode = VSL_CONV_MODE_DIRECT;
 
     status = vsldConvNewTask(&task,mode,rank,input_shape, kernel_shape, tshape);
     status = vsldConvExec(task,input,NULL,kernel,NULL,t,NULL);
