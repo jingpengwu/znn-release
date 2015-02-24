@@ -19,6 +19,7 @@
 
 #include "front_end/options.hpp"
 #include "core/network.hpp"
+#include "core/bf_conv.hpp"
 
 #include <iostream>
 #include <zi/time.hpp>
@@ -26,11 +27,20 @@
 
 ZiARG_string(options, "", "Option file path");
 ZiARG_bool(test_only, false, "Test only");
+ZiARG_bool(test_mkl_only, false, "Test MKL only");
 
 using namespace zi::znn;
 
 int main(int argc, char** argv)
 {
+    // test MKL performance
+    if(ZiARG_test_mkl_only)
+    {
+        std::cout<< "test MKL only" << std::endl;
+        test_mkl();
+        return 0;
+    }
+
     // options
     zi::parse_arguments(argc, argv);
     options_ptr op = options_ptr(new options(ZiARG_options));
@@ -48,4 +58,6 @@ int main(int argc, char** argv)
     {
         net.train();
     }
+
+    return 0;
 }

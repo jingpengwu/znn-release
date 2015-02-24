@@ -9,7 +9,7 @@ OTH_FLAGS	=	-Wall -Wextra -Wno-unused-variable
 MKL_FLAGS	=	-lmkl_core -lm -lmkl_intel_lp64 -lmkl_sequential
 
 LIBS		=	-lfftw3 -lpthread -lrt -lfftw3_threads
-BOOST_LIBS	=	-lboost_program_options -lboost_regex -lboost_filesystem -lboost_system
+BOOST_LIBS	=	-lboost_program_options -lboost_regex -lboost_filesystem -lboost_system -lboost_timer
 
 znn: src/main.cpp
 	$(CPP) -o $(ODIR)/znn src/main.cpp $(CPP_FLAGS) $(INC_FLAGS) $(LIB_FLAGS) $(OPT_FLAGS) $(OTH_FLAGS) $(LIBS) $(MKL_FLAGS) $(BOOST_LIBS) 

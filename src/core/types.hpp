@@ -32,11 +32,13 @@ namespace zi {
 namespace znn {
 
 typedef boost::multi_array<double, 3, allocator< double > >                             double3d ;
+typedef boost::multi_array<double, 2, allocator< double > >                             double2d ;
 typedef boost::multi_array<std::complex<double>, 3, allocator< std::complex<double> > > complex3d;
 typedef boost::multi_array<double, 1, allocator< double > >				double1d ;
 
 
 typedef boost::shared_ptr<double3d>   double3d_ptr ;
+typedef boost::shared_ptr<double2d>   double2d_ptr ;
 typedef boost::shared_ptr<complex3d>  complex3d_ptr;
 typedef boost::shared_ptr<double1d>   double1d_ptr ;
 
