@@ -1,6 +1,7 @@
 znn-release
 ===========
 Multi-core CPU implementation of deep learning for 2D and 3D convolutional networks (ConvNets).
+The direct convolution can be computed using intel MKL.
 
 
 
