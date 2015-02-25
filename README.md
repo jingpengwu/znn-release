@@ -30,9 +30,9 @@ Compile
     make mkl_test
 
 If compile is successful, an executalbe named **znn** will be generated under the directory [bin](./bin/).
-znn:        normal compilation
-znn_mkl:    znn using convolution from intel MKL (need MKL installed)
-mkl_test:   compare the convolution of MKL and naive implementation
+*znn:        normal compilation 
+*znn_mkl:    znn using convolution from intel MKL (need MKL installed)
+*mkl_test:   compare the convolution of MKL and naive implementation
 
 Clean
 ---------------
