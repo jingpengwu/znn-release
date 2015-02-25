@@ -14,6 +14,10 @@ Currently we only support linux environments.
 |[boost](http://www.boost.org/)|libboost-all-dev|
 
 
+Setup MKL enviroment
+---------------
+module load intel
+module list
 
 Compile
 ---------------
@@ -29,7 +33,6 @@ mkl_test:   compare the convolution of MKL and naive implementation
 Clean
 ---------------
     make clean
-
 
 Directories
 -----------
