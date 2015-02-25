@@ -185,6 +185,7 @@ public:
                 return true;
             }
         }
+	return true;
     }
 
     bool timed_acquire_write( int64_t ttl ) const
@@ -295,6 +296,7 @@ public:
                 return true;
             }
         }
+	return true;
     }
 
     bool timed_acquire_undecided( int64_t ttl ) const
