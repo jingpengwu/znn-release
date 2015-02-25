@@ -17,10 +17,11 @@ Currently we only support linux environments.
 |[MKL](https://software.intel.com/en-us/intel-mkl)|intel MKL 11.1|
 
 
-Setup MKL enviroment
+[Setup MKL enviroment](https://software.intel.com/sites/products/documentation/doclib/iss/2013/compiler/cpp-lin/)
 ---------------
     module load intel
     module list
+    source <intel-mkl-install-dir>/bin/compilervars.sh intel64 
 
 Compile
 ---------------
