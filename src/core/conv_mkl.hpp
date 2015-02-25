@@ -141,6 +141,59 @@ inline double3d_ptr bf_conv_mkl_2d(double3d_ptr ap, double3d_ptr bp)
 
 
     // size
+    MKL_INT input_shape[3]={ax,ay,1}, kernel_shape[3]={bx,by,1};
+    MKL_INT tx = ax + bx - 1, ty = ay + by -1;
+    MKL_INT tshape[3]={tx,ty,1};
+
+    // give value
+    double input[ax*ay], kernel[bx*by];
+    for (std::size_t i = 0; i < ax; ++i)
+        for (std::size_t j = 0; j < ay; ++j)
+            input[i*ay + j] = a[i][j][0];
+    for (std::size_t i = 0; i < bx; ++i)
+        for (std::size_t j = 0; j < by; ++j)
+            kernel[i*by + j] = b[i][j][0];
+    // temporal variable for MKL's long convolution
+    double t[tx*ty];
+
+    // 2d convolution using MKL
+    VSLConvTaskPtr task;
+    MKL_INT rank=3;
+    int status;
+    int mode = VSL_CONV_MODE_DIRECT;
+
+    status = vsldConvNewTask(&task,mode,rank,input_shape, kernel_shape, tshape);
+    //status = vslConvSetStart(task, start);
+    status = vsldConvExec(task,input,NULL,kernel,NULL,t,NULL);
+    status = vslConvDeleteTask(&task);
+
+    // extract the center vector
+    double3d_ptr rp = volume_pool.get_double3d(rx,ry,1);
+    double3d& r = *rp;
+    for(int i = 0; i < rx; i++)
+        for(int j = 0; j < ry; j++)
+            r[i][j][0] = t[(i+bx-1)*ty+ j+by-1];
+
+    return rp;
+}
+
+// 2D convolution using MKL
+inline double3d_ptr bf_conv_mkl_2d_V1(double3d_ptr ap, double3d_ptr bp)
+{
+    double3d& a = *ap;
+    double3d& b = *bp;
+
+    std::size_t ax = a.shape()[0];
+    std::size_t ay = a.shape()[1];
+
+    std::size_t bx = b.shape()[0];
+    std::size_t by = b.shape()[1];
+
+    std::size_t rx = ax - bx + 1;
+    std::size_t ry = ay - by + 1;
+
+
+    // size
     MKL_INT input_shape[2]={ax,ay}, kernel_shape[2]={bx,by};
     MKL_INT tx = ax + bx - 1, ty = ay + by -1;
     MKL_INT tshape[2]={tx,ty};
@@ -171,7 +224,7 @@ inline double3d_ptr bf_conv_mkl_2d(double3d_ptr ap, double3d_ptr bp)
     double3d& r = *rp;
     for(int i = 0; i < rx; i++)
         for(int j = 0; j < ry; j++)
-            r[i][j][0] = t[(i+rx-1)*ty+ j+ry-1];
+            r[i][j][0] = t[(i+bx-1)*ty+ j+by-1];
 
     return rp;
 }
