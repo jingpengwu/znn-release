@@ -16,8 +16,8 @@ Currently we only support linux environments.
 
 Setup MKL enviroment
 ---------------
-module load intel
-module list
+    module load intel
+    module list
 
 Compile
 ---------------
