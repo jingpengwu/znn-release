@@ -12,6 +12,7 @@ Currently we only support linux environments.
 |:-----:|-------------------|
 |[fftw](http://www.fftw.org/)|libfftw3-dev|
 |[boost](http://www.boost.org/)|libboost-all-dev|
+|[MKL](https://software.intel.com/en-us/intel-mkl)|MKL 11.1|
 
 
 Setup MKL enviroment
