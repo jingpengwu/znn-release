@@ -47,7 +47,7 @@ bool test_mkl(std::size_t ax, std::size_t ay, std::size_t bx, std::size_t by, in
     // direct convolution with naive method
     boost::timer::cpu_timer timer;
     for(int i=0; i<times; ++i)
-        rp_n = bf_conv_original(ap, bp);
+        rp_n = bf_conv_naive(ap, bp);
     timer.stop();
     // show time
     std::cout <<"time cost of naive method: "<< timer.format() << "s\n"; // gives the number of seconds, as double.
@@ -113,7 +113,7 @@ int main(int argc, char** argv)
     {
         std::cout<< "argument should be two or four uint numbers." << std::endl;
         std::cout<< "use default matrix size: 20X20, 5X5"<<std::endl;
-        test_mkl(20,20,5,5,10);
+        test_mkl(20,20,5,5,1000);
     }
 
     return 0;

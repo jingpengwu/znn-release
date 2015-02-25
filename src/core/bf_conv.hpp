@@ -30,7 +30,7 @@
 namespace zi {
 namespace znn {
 
-inline double3d_ptr bf_conv_original(double3d_ptr ap, double3d_ptr bp)
+inline double3d_ptr bf_conv_naive(double3d_ptr ap, double3d_ptr bp)
 {
     double3d& a = *ap;
     double3d& b = *bp;
@@ -72,7 +72,8 @@ inline double3d_ptr bf_conv_original(double3d_ptr ap, double3d_ptr bp)
 inline double3d_ptr bf_conv(double3d_ptr ap, double3d_ptr bp)
 {
     // 2d filter, use MKL
-    return bf_conv_mkl( ap,  bp);
+    //return bf_conv_mkl( ap,  bp);
+    return bf_conv_naive( ap,  bp);
 }
 
 
@@ -256,15 +257,8 @@ inline double3d_ptr bf_conv_inverse_constant(const double3d_ptr& ap,
     return rp;
 }
 
-inline double3d_ptr bf_conv_sparse(const double3d_ptr& ap,
-                                   const double3d_ptr& bp,
-                                   const vec3i& s)
-{
-    return bf_conv_sparse_mkl(ap, bp, s);
-}
 
-
-inline double3d_ptr bf_conv_sparse_original(const double3d_ptr& ap,
+inline double3d_ptr bf_conv_sparse_naive(const double3d_ptr& ap,
                                    const double3d_ptr& bp,
                                    const vec3i& s)
 {
@@ -303,6 +297,15 @@ inline double3d_ptr bf_conv_sparse_original(const double3d_ptr& ap,
             }
 
     return rp;
+}
+
+
+inline double3d_ptr bf_conv_sparse(const double3d_ptr& ap,
+                                   const double3d_ptr& bp,
+                                   const vec3i& s)
+{
+    //return bf_conv_sparse_mkl(ap, bp, s);
+    return bf_conv_sparse_naive(ap, bp, s);
 }
 
 inline double3d_ptr bf_conv_flipped_sparse(const double3d_ptr& ap,
