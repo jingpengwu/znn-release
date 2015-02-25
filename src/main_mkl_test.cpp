@@ -55,7 +55,7 @@ bool test_mkl(std::size_t ax, std::size_t ay, std::size_t bx, std::size_t by, in
     // convolution with MKL
     timer.start();
     for(int i=0; i<times; ++i)
-        rp_m = bf_conv_mkl_2d(ap, bp);
+        rp_m = bf_conv_mkl(ap, bp);
     timer.stop();
     // show timer
     std::cout <<"time cost of MKL method:   "<< timer.format() << "s\n"; // gives the number of seconds, as double.

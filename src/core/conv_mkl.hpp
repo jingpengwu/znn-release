@@ -29,140 +29,51 @@ extern "C" {
 
 namespace zi {
 namespace znn {
-/*
-bool conv_mkl_1d(double* x, MKL_INT xshape, double* y, MKL_INT yshape, double* r, MKL_INT rshape)
-{
-    VSLConvTaskPtr task;
-    MKL_INT zshape = xshape + yshape - 1;
-    double z[zshape];
-    int status;
 
-    int mode = VSL_CONV_MODE_DIRECT;
-
-    status = vsldConvNewTask1D(&task,mode,xshape,yshape,zshape);
-    status = vsldConvExec1D(task,x,1,y,1,z,1);
-    status = vslConvDeleteTask(&task);
-
-
-    // extract the center vector
-    /*
-    for(int i = 0; i < rshape; i++)
-    {
-        r[i] = z[i+yshape-1];
-    }
-    *//*
-    r = z+yshape-1;
-    return true;
-
-}
-
-// 1D convolution using MKL
-inline double3d_ptr bf_conv_mkl_1d(double3d_ptr ap, double3d_ptr bp)
+// 3D convolution using MKL
+inline double3d_ptr bf_conv_mkl(double3d_ptr ap, double3d_ptr bp)
 {
     double3d& a = *ap;
     double3d& b = *bp;
 
     std::size_t ax = a.shape()[0];
     std::size_t ay = a.shape()[1];
+    std::size_t az = a.shape()[2];
 
     std::size_t bx = b.shape()[0];
     std::size_t by = b.shape()[1];
+    std::size_t bz = b.shape()[2];
 
     std::size_t rx = ax - bx + 1;
     std::size_t ry = ay - by + 1;
-
-    double3d_ptr rp = volume_pool.get_double3d(rx,ry,1);
-    double3d& r = *rp;
-
-    // one dimension vector in y direction for SSE, vector and window
-    double *avx=new double[ax], *bvx=new double[bx], *rvx=new double[rx];
-    double *avy=new double[ay], *bvy=new double[by], *rvy=new double[ry];
-    //double avx[ax], bvx[bx], rvx[rx];
-    //double avy[ay], bvy[by], rvy[ry];
-
-    // X
-    for ( std::size_t x = 0; x < rx; ++x)
-    {
-        for ( std::size_t i = 0; i < ay; ++i)
-                avy[i] = a[x][i][0];
-        for ( std::size_t i = 0; i < by; ++i)
-                bvy[i] = b[x][i][0];
-
-        // 1d convolution of av and bv, output: rv
-        conv_mkl_1d( avy, ay, bvy, by, rvy, ry );
-
-        for ( std::size_t i = 0; i < ry; ++i )
-        {
-            r[x][i][0] = rvy[i];
-        }
-    }
-
-    // Y
-    for ( std::size_t y = 0; y < ry; ++y)
-    {
-        for ( std::size_t i = 0; i < ax; ++i)
-                avx[i] = a[i][y][0];
-        for ( std::size_t i = 0; i < bx; ++i)
-                bvx[i] = b[i][y][0];
-
-        // 1d convolution of av and bv, output: rv
-        conv_mkl_1d( avx, ay, bvx, by, rvx, ry );
-
-        for ( std::size_t i = 0; i < ry; ++i )
-        {
-            r[i][y][0] = rvx[i];
-        }
-    }
-
-    // combine the X and Y results
-
-    // free the arrays
-    delete[] avx, bvx, rvx;
-    delete[] avy, bvy, rvy;
-
-    return rp;
-}
-*/
-
-// 2D convolution using MKL
-inline double3d_ptr bf_conv_mkl_2d(double3d_ptr ap, double3d_ptr bp)
-{
-    double3d& a = *ap;
-    double3d& b = *bp;
-
-    std::size_t ax = a.shape()[0];
-    std::size_t ay = a.shape()[1];
-
-    std::size_t bx = b.shape()[0];
-    std::size_t by = b.shape()[1];
-
-    std::size_t rx = ax - bx + 1;
-    std::size_t ry = ay - by + 1;
-
+    std::size_t rz = az - bz + 1;
 
     // size
-    MKL_INT input_shape[3]={ax,ay,1}, kernel_shape[3]={bx,by,1};
-    MKL_INT tx = ax + bx - 1, ty = ay + by -1;
-    MKL_INT tshape[3]={tx,ty,1};
+    MKL_INT input_shape[3]={ax,ay,az}, kernel_shape[3]={bx,by,bz};
+    MKL_INT tx = ax + bx - 1, ty = ay + by - 1, tz = az + bz - 1;
+    MKL_INT tshape[3]={tx,ty,tz};
 
     // give value
-    double input[ax*ay], kernel[bx*by];
+    double input[ax*ay*az], kernel[bx*by*az];
     for (std::size_t i = 0; i < ax; ++i)
         for (std::size_t j = 0; j < ay; ++j)
-            input[i*ay + j] = a[i][j][0];
+            for (std::size_t k = 0; k < az; ++k)
+                input[i*ay*az + j*az + k] = a[i][j][k];
     for (std::size_t i = 0; i < bx; ++i)
         for (std::size_t j = 0; j < by; ++j)
-            kernel[i*by + j] = b[i][j][0];
+            for (std::size_t k = 0; k < bz; ++k)
+                kernel[i*by*bz + j*bz + k] = b[i][j][k];
     // temporal variable for MKL's long convolution
-    double t[tx*ty];
+    double t[tx*ty*tz];
 
     // 2d convolution using MKL
     VSLConvTaskPtr task;
-    MKL_INT rank=3;
+    MKL_INT dims=3;
     int status;
-    int mode = VSL_CONV_MODE_DIRECT;
+    const int mode = VSL_CONV_MODE_DIRECT;//direct convolution
+    //const int start[3]={bx-1,by-1,bz-1};
 
-    status = vsldConvNewTask(&task,mode,rank,input_shape, kernel_shape, tshape);
+    status = vsldConvNewTask(&task,mode,dims,input_shape, kernel_shape, tshape);
     //status = vslConvSetStart(task, start);
     status = vsldConvExec(task,input,NULL,kernel,NULL,t,NULL);
     status = vslConvDeleteTask(&task);
@@ -172,13 +83,14 @@ inline double3d_ptr bf_conv_mkl_2d(double3d_ptr ap, double3d_ptr bp)
     double3d& r = *rp;
     for(int i = 0; i < rx; i++)
         for(int j = 0; j < ry; j++)
-            r[i][j][0] = t[(i+bx-1)*ty+ j+by-1];
+            for (int k = 0; k < rz; ++k)
+                r[i][j][k] = t[(i+bx-1)*ty*tz+ (j+by-1)*tz + k+bz-1];
 
     return rp;
 }
 
 // 2D convolution using MKL
-inline double3d_ptr bf_conv_mkl_2d_V1(double3d_ptr ap, double3d_ptr bp)
+inline double3d_ptr bf_conv_mkl_2d(double3d_ptr ap, double3d_ptr bp)
 {
     double3d& a = *ap;
     double3d& b = *bp;
@@ -211,11 +123,11 @@ inline double3d_ptr bf_conv_mkl_2d_V1(double3d_ptr ap, double3d_ptr bp)
 
     // 2d convolution using MKL
     VSLConvTaskPtr task;
-    MKL_INT rank=2;
+    MKL_INT dims=2;
     int status;
     int mode = VSL_CONV_MODE_DIRECT;
 
-    status = vsldConvNewTask(&task,mode,rank,input_shape, kernel_shape, tshape);
+    status = vsldConvNewTask(&task,mode,dims,input_shape, kernel_shape, tshape);
     status = vsldConvExec(task,input,NULL,kernel,NULL,t,NULL);
     status = vslConvDeleteTask(&task);
 
@@ -229,7 +141,69 @@ inline double3d_ptr bf_conv_mkl_2d_V1(double3d_ptr ap, double3d_ptr bp)
     return rp;
 }
 
+inline double3d_ptr bf_conv_sparse_mkl( const double3d_ptr& ap,
+                                        const double3d_ptr& bp,
+                                        const vec3i& s)
+{
+    double3d& a = *ap;
+    double3d& b = *bp;
 
+    std::size_t ax = a.shape()[0];
+    std::size_t ay = a.shape()[1];
+    std::size_t az = a.shape()[2];
+
+    std::size_t bx = b.shape()[0];
+    std::size_t by = b.shape()[1];
+    std::size_t bz = b.shape()[2];
+
+    std::size_t rx = ax - bx + 1;
+    std::size_t ry = ay - by + 1;
+    std::size_t rz = az - bz + 1;
+
+    // size
+    MKL_INT input_shape[3]={ax,ay,az}, kernel_shape[3]={bx,by,bz};
+    MKL_INT tx = ax + bx - 1, ty = ay + by - 1, tz = az + bz - 1;
+    MKL_INT tshape[3]={tx,ty,tz};
+
+    // give value
+    double input[ax*ay*az], kernel[bx*by*az];
+    for (std::size_t i = 0; i < ax; ++i)
+        for (std::size_t j = 0; j < ay; ++j)
+            for (std::size_t k = 0; k < az; ++k)
+                input[i*ay*az + j*az + k] = a[i][j][k];
+    for (std::size_t i = 0; i < bx; ++i)
+        for (std::size_t j = 0; j < by; ++j)
+            for (std::size_t k = 0; k < bz; ++k)
+                kernel[i*by*bz + j*bz + k] = b[i][j][k];
+    // temporal variable for MKL's long convolution
+
+    // get stride
+    int stride[3] = {s[0],s[1],s[2]};
+
+    double t[tx*ty*tz];
+
+    // 2d convolution using MKL
+    VSLConvTaskPtr task;
+    MKL_INT dims=3;
+    int status;
+    const int mode = VSL_CONV_MODE_DIRECT;//direct convolution
+    //const int start[3]={bx-1,by-1,bz-1};
+
+    status = vsldConvNewTask(&task,mode,dims,input_shape, kernel_shape, tshape);
+    //status = vslConvSetStride(task, start);
+    status = vsldConvExec(task,input, stride, kernel, stride, t, NULL);
+    status = vslConvDeleteTask(&task);
+
+    // extract the center vector
+    double3d_ptr rp = volume_pool.get_double3d(rx,ry,1);
+    double3d& r = *rp;
+    for(int i = 0; i < rx; i++)
+        for(int j = 0; j < ry; j++)
+            for (int k = 0; k < rz; ++k)
+                r[i][j][k] = t[(i+bx-1)*ty*tz+ (j+by-1)*tz + k+bz-1];
+
+    return rp;
+}
 
 }} // namespace zi::znn
 
