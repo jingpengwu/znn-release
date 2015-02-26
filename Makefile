@@ -15,7 +15,7 @@ znn: src/main.cpp
 
 # intel MKL 
 CC		=	icpc
-CC_FLAGS	=	-O3 -xHost -ipo -static-intel
+CC_FLAGS	=	-O3 #-xHost #-ipo -static-intel
 DEBUG_FLAGS	=	-g -debug
 INC_MKL_FLAGS	=	-I. -I./src -I./zi -I/usr/local/boost/1.55.0/include -I/opt/intel/composer_xe_2013_sp1.4.211/mkl/include/
 LIB_MKL_FLAGS	=	-L/opt/intel/composer_xe_2013_sp1.4.211/mkl/lib/intel64/ -L/opt/intel/composer_xe_2013_sp1.4.211/compiler/lib/intel64 -L. -L/usr/local/boost/1.55.0/lib64 

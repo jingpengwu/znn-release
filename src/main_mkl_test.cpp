@@ -19,8 +19,31 @@
 
 #include "core/bf_conv.hpp"
 #include "core/conv_mkl.hpp"
+#include <boost/random.hpp>
 
 using namespace zi::znn;
+
+bool random_volume(double3d_ptr ap)
+{
+    // Initialise Boost random numbers, uniform integers from min to max
+     const int rangeMin = 0;
+     const int rangeMax = 10;
+     typedef boost::uniform_int<> NumberDistribution; // choose a distribution
+     typedef boost::mt19937 RandomNumberGenerator;    // pick the random number generator method,
+     typedef boost::variate_generator< RandomNumberGenerator&, NumberDistribution > Generator;  // link the generator to the distribution
+
+     NumberDistribution distribution( rangeMin, rangeMax );
+     RandomNumberGenerator generator;
+     Generator numberGenerator(generator, distribution);
+     generator.seed( 2563 ); // seed with some initial value
+
+    double3d& a=*ap;
+    for (std::size_t i=0; i < a.shape()[0]; i++)
+        for(std::size_t j=0; j < a.shape()[1]; j++)
+            for( std::size_t k = 0; k < a.shape()[2]; k++ )
+                a[i][j][k] = numberGenerator();
+    return true;
+}
 
 // test MKL performance, added by Jingpeng Wu
 bool test_mkl(std::size_t ax, std::size_t ay, std::size_t bx, std::size_t by, int times)
@@ -50,20 +73,36 @@ bool test_mkl(std::size_t ax, std::size_t ay, std::size_t bx, std::size_t by, in
     // direct convolution with naive method
     boost::timer::cpu_timer timer;
     for(int i=0; i<times; ++i)
+    {
+        timer.stop();
+        // randomize volume
+        random_volume(ap);
+        random_volume(bp);
+        // convolution
+        timer.resume();
         rp_n = bf_conv_naive(ap, bp);
         //rp_n = bf_conv_sparse_naive(ap, bp, s);
+    }
     timer.stop();
     // show time
-    std::cout <<"time cost of naive method: "<< timer.format() << "s\n"; // gives the number of seconds, as double.
+    std::cout <<"time cost of naive method: "<< timer.format() << std::endl; // gives the number of seconds, as double.
 
     // convolution with MKL
     timer.start();
     for(int i=0; i<times; ++i)
+    {
+        timer.stop();
+        // randomize volume
+        random_volume(ap);
+        random_volume(bp);
+        // convolution
+        timer.resume();
         rp_m = bf_conv_mkl(ap, bp);
         //rp_m = bf_conv_sparse_mkl(ap, bp, s);
+    }
     timer.stop();
     // show timer
-    std::cout <<"time cost of MKL method:   "<< timer.format() << "s\n"; // gives the number of seconds, as double.
+    std::cout <<"time cost of MKL method:   "<< timer.format() << std::endl; // gives the number of seconds, as double.
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     // get output volume
@@ -90,8 +129,8 @@ bool test_mkl(std::size_t ax, std::size_t ay, std::size_t bx, std::size_t by, in
                 break;
             }
         }
-        //if(!flag)
-          //  break;
+        if(!flag)
+            break;
     }
     if (flag)
         std::cout<< "results are the same." << std::endl;

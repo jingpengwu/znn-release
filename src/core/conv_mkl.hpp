@@ -107,7 +107,7 @@ inline double3d_ptr bf_conv_sparse_mkl( const double3d_ptr& ap,
 
     // data stride
     int stride[3] = {s[0],s[1],s[2]};
-    MKL_INT input_shape[3]={ax/s[0],ay/s[1],az/s[2]}, kernel_shape[3]={bx/s[0],by/s[1],bz/s[2]};
+    //MKL_INT input_shape[3]={ax/s[0],ay/s[1],az/s[2]}, kernel_shape[3]={bx/s[0],by/s[1],bz/s[2]};
 
     // 2d convolution using MKL
     VSLConvTaskPtr task;
