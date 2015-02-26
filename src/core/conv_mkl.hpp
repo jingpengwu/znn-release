@@ -73,7 +73,7 @@ inline double3d_ptr bf_conv_mkl(double3d_ptr ap, double3d_ptr bp)
     status = vslConvDeleteTask(&task);
 
     // extract the center vector
-    double3d_ptr rp = volume_pool.get_double3d(rx,ry,1);
+    double3d_ptr rp = volume_pool.get_double3d(rx,ry,rz);
     double3d& r = *rp;
     for(int i = 0; i < rx; i++)
         for(int j = 0; j < ry; j++)
@@ -172,8 +172,8 @@ inline double3d_ptr bf_conv_sparse_mkl( const double3d_ptr& ap,
     //const int start[3]={bx-1,by-1,bz-1};
 
     status = vsldConvNewTask(&task,mode,dims,input_shape, kernel_shape, tshape);
-    //status = vslConvSetStride(task, start);
-    status = vsldConvExec(task, input, stride, kernel, stride, t, stride);
+    //status = vslConvSetStart(task, start);
+    status = vsldConvExec(task, input, NULL, kernel, NULL, t, NULL);
     status = vslConvDeleteTask(&task);
 
     // extract the center vector
