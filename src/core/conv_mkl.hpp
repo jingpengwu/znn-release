@@ -52,8 +52,8 @@ inline double3d_ptr bf_conv_mkl(double3d_ptr ap, double3d_ptr bp)
     double3d& r = *rp;
 
     // size
-    MKL_INT input_shape[3]={ax,ay,az}, kernel_shape[3]={bx,by,bz};
-    MKL_INT rshape[3]={rx,ry,rz};
+    MKL_INT input_shape[3]={ay,ax,az}, kernel_shape[3]={by,bx,bz};
+    MKL_INT rshape[3]={ry,rx,rz};
 
     // give value
     double* input=a.data();
@@ -64,11 +64,13 @@ inline double3d_ptr bf_conv_mkl(double3d_ptr ap, double3d_ptr bp)
     MKL_INT dims=3;
     int status;
     const int mode = VSL_CONV_MODE_DIRECT;//direct convolution
-    const int start[3]={bx-1,by-1,bz-1};
+    const int start[3]={by-1,bx-1,bz-1};
+
+    //int stride[3] = {1,1,1};
 
     status = vsldConvNewTask(&task,mode,dims,input_shape, kernel_shape, rshape);
     status = vslConvSetStart(task, start);
-    status = vsldConvExec(task,input,NULL,kernel,NULL, r.data() ,NULL);
+    status = vsldConvExec(task, input, NULL, kernel, NULL, r.data(), NULL);
     status = vslConvDeleteTask(&task);
 
     return rp;

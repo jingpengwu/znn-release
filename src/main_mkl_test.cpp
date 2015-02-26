@@ -23,114 +23,115 @@
 
 using namespace zi::znn;
 
-double3d_ptr random_volume(double3d_ptr ap)
+double3d_ptr random_volume(double3d_ptr ap, float seed)
 {
     // Initialise Boost random numbers, uniform integers from min to max
-     const int rangeMin = 0;
-     const int rangeMax = 10;
-     typedef boost::uniform_real<> NumberDistribution; // choose a distribution
-     typedef boost::mt19937 RandomNumberGenerator;    // pick the random number generator method,
-     typedef boost::variate_generator< RandomNumberGenerator&, NumberDistribution > Generator;  // link the generator to the distribution
+    const int rangeMin = 0;
+    const int rangeMax = 10;
+    typedef boost::uniform_int<> NumberDistribution; // use int for evaluation. real may cause inequality due to precision problems
+    typedef boost::mt19937 RandomNumberGenerator;
+    typedef boost::variate_generator< RandomNumberGenerator&, NumberDistribution > Generator;
 
-     NumberDistribution distribution( rangeMin, rangeMax );
-     RandomNumberGenerator generator;
-     Generator numberGenerator(generator, distribution);
-     generator.seed( 2563 ); // seed with some initial value
+    NumberDistribution distribution( rangeMin, rangeMax );
+    RandomNumberGenerator generator;
+    Generator numberGenerator(generator, distribution);
+    generator.seed( seed ); // seed with some initial value
 
     double3d& a=*ap;
     for (std::size_t i=0; i < a.shape()[0]; i++)
-        for(std::size_t j=0; j < a.shape()[1]; j++)
-            for( std::size_t k = 0; k < a.shape()[2]; k++ )
-                a[i][j][k] = numberGenerator();
+    for(std::size_t j=0; j < a.shape()[1]; j++)
+        for( std::size_t k = 0; k < a.shape()[2]; k++ )
+            a[i][j][k] = numberGenerator();
     return ap;
 }
 
-// test MKL performance, added by Jingpeng Wu
-bool test_mkl(std::size_t ax, std::size_t ay, std::size_t bx, std::size_t by, int times)
+void assert_volume(double3d_ptr ap, double3d_ptr bp)
 {
-    std::cout<< "start testing MKL ..." <<std::endl;
-    // initialization
-    double3d_ptr ap=volume_pool.get_double3d(ax,ay,1);
-    double3d_ptr bp=volume_pool.get_double3d(bx,by,1);
     double3d& a=*ap;
     double3d& b=*bp;
-    double3d_ptr rp_m;
-    double3d_ptr rp_n;
-
-    // sparse convolution
-    const vec3i s(2,2,1);
-
-    // convolution
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    // direct convolution with naive method
-    boost::timer::cpu_timer timer;
-    timer.start();
-    timer.stop();
-    for(int i=0; i<times; ++i)
-    {
-        // randomize volume
-        ap = random_volume(ap);
-        bp = random_volume(bp);
-        // convolution
-        timer.resume();
-        rp_n = bf_conv_naive(ap, bp);
-        timer.stop();
-        //rp_n = bf_conv_sparse_naive(ap, bp, s);
-    }
-    // show time
-    std::cout <<"time cost of naive method: "<< timer.format() << std::endl; // gives the number of seconds, as double.
-
-    // convolution with MKL
-    timer.start();
-    timer.stop();
-    for(int i=0; i<times; ++i)
-    {
-        // randomize volume
-        ap = random_volume(ap);
-        bp = random_volume(bp);
-        // convolution
-        timer.resume();
-        rp_m = bf_conv_mkl(ap, bp);
-        timer.stop();
-        //rp_m = bf_conv_sparse_mkl(ap, bp, s);
-    }
-    // show timer
-    std::cout <<"time cost of MKL method:   "<< timer.format() << std::endl; // gives the number of seconds, as double.
-    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    // get output volume
-    double3d& r_n=*rp_n;
-    double3d& r_m=*rp_m;
 
     // shape of output
-    std::cout<< "shape of naive and MKL output: "<<r_n.shape()[0]<<"X"<<r_n.shape()[1]<<",  "<<r_m.shape()[0]<<"X"<<r_m.shape()[1]<<std::endl;
-    // test the address
-    if (rp_n == rp_m)
-        std::cout<< "the address are the same!" << std::endl;
+    std::cout<< "shape of naive and MKL output: "<<a.shape()[0]<<"X"<<a.shape()[1]<<",  "<<b.shape()[0]<<"X"<<b.shape()[1]<<std::endl;
 
     // test the correctness of MKL result by comparing the results
     bool flag = true;
-    for ( int i=0; i<r_n.shape()[0]; ++i)
+    for ( int i=0; i<a.shape()[0]; ++i)
     {
-        for ( int j=0; j<r_n.shape()[1]; ++j )
+        for ( int j=0; j<a.shape()[1]; ++j )
         {
-            if( r_n[i][j][0] != r_m[i][j][0] )
+            for ( int k=0; k<a.shape()[2]; ++k )
             {
-                flag = false;
-                std::cout<<"i: "<<i<<",     j: "<<j<<std::endl;
-                std::cout<< "the results are different: " << r_n[i][j][0]<< " and " << r_m[i][j][0] << std::endl;
-                break;
+                if( a[i][j][k] != b[i][j][k] )
+                {
+                    flag = false;
+                    std::cout<<"i: "<< i <<",     j: "<< j <<", k: "<< k <<std::endl;
+                    std::cout<< "the results are different: " << a[i][j][k]<< " and " << b[i][j][k] << std::endl;
+                    break;
+                }
             }
+            if(!flag)
+                break;
         }
         if(!flag)
             break;
     }
+
     if (flag)
         std::cout<< "results are the same." << std::endl;
+}
 
-    // show some value
-    std::cout<< "value of naive method  :   " << r_n[0][0][0] << std::endl;
-    std::cout<< "value of MKL approach  :   " << r_m[0][0][0] << std::endl;
+// test MKL performance, added by Jingpeng Wu
+bool test_mkl(vec3i ashape, vec3i bshape, int times)
+{
+    std::cout<< "start testing MKL ..." <<std::endl;
+    // initialization
+    double3d_ptr ap=volume_pool.get_double3d( ashape );
+    double3d_ptr bp=volume_pool.get_double3d( bshape );
+    double3d& a=*ap;
+    double3d& b=*bp;
+
+    double3d_ptr rp_n;
+    double3d_ptr rp_m;
+
+    // sparse convolution test
+    const vec3i s(2,2,1);
+
+    // setup timer
+    boost::timer::cpu_timer n_timer;
+    n_timer.start();
+    n_timer.stop();
+    boost::timer::cpu_timer m_timer;
+    m_timer.start();
+    m_timer.stop();
+
+    // convolution
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    for(int i=0; i<times; ++i)
+    {
+        // randomize volume
+        ap = random_volume(ap, i);
+        bp = random_volume(bp, i+1);
+
+        // convolution using naive method
+        n_timer.resume();
+        rp_n = bf_conv_naive(ap, bp);
+        //rp_n = bf_conv_sparse_naive(ap, bp, s);
+        n_timer.stop();
+
+        // convolution using MKL
+        m_timer.resume();
+        rp_m = bf_conv_mkl(ap, bp);
+        //rp_m = bf_conv_sparse_mkl(ap, bp, s);
+        m_timer.stop();
+    }
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    // show time
+    std::cout <<"time cost of naive method: "<< n_timer.format() << std::endl; // gives the number of seconds, as double.
+    std::cout <<"time cost of MKL method:   "<< m_timer.format() << std::endl; // gives the number of seconds, as double
+
+    // assert the output of naive and MKL method is the same
+    assert_volume( rp_n, rp_m );
 
     return 0;
 }
@@ -138,19 +139,23 @@ bool test_mkl(std::size_t ax, std::size_t ay, std::size_t bx, std::size_t by, in
 int main(int argc, char** argv)
 {
     std::cout<< "test MKL only" << std::endl;
-    if (argc == 6)
-        test_mkl(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]) );
-    else if (argc == 4)
+
+    if (argc == 8)
     {
-        std::cout<< "parameters :   " << argv[1]<<",    "<<argv[2]<<std::endl;
-        std::cout<< "run times  :   " << argv[3]<< std::endl;
-        test_mkl(atoi(argv[1]), atoi(argv[1]),atoi(argv[2]), atoi(argv[2]), atoi(argv[3]) );
+        // get the shape
+        vec3i ashape( atoi(argv[1]), atoi(argv[2]), atoi(argv[3]) );
+        vec3i bshape( atoi(argv[4]), atoi(argv[5]), atoi(argv[6]) );
+        int times = atoi( argv[7] );
+        test_mkl( ashape, bshape, times );
     }
     else
     {
-        std::cout<< "argument should be two or four uint numbers." << std::endl;
-        std::cout<< "use default matrix size: 20X20, 5X5"<<std::endl;
-        test_mkl(20,20,5,5,1000);
+        std::cout<< "argument should be 7 uint numbers." << std::endl;
+        std::cout<< "use default matrix size: 200X200X4, 3X3X1, "<<std::endl;
+        vec3i ashape(200,200,4);
+        vec3i bshape(3,3,1);
+        int times = 20;
+        test_mkl( ashape, bshape, times );
     }
 
     return 0;
