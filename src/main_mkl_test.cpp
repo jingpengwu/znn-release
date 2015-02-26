@@ -42,12 +42,16 @@ bool test_mkl(std::size_t ax, std::size_t ay, std::size_t bx, std::size_t by, in
         for( int j=0; j<by; ++j )
             b[i][j][0] = i*by + j ;
 
+    // sparse convolution
+    const vec3i s(2,2,1);
+
     // convolution
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // direct convolution with naive method
     boost::timer::cpu_timer timer;
     for(int i=0; i<times; ++i)
         rp_n = bf_conv_naive(ap, bp);
+        //rp_n = bf_conv_sparse_naive(ap, bp, s);
     timer.stop();
     // show time
     std::cout <<"time cost of naive method: "<< timer.format() << "s\n"; // gives the number of seconds, as double.
@@ -56,6 +60,7 @@ bool test_mkl(std::size_t ax, std::size_t ay, std::size_t bx, std::size_t by, in
     timer.start();
     for(int i=0; i<times; ++i)
         rp_m = bf_conv_mkl(ap, bp);
+        //rp_m = bf_conv_sparse_mkl(ap, bp, s);
     timer.stop();
     // show timer
     std::cout <<"time cost of MKL method:   "<< timer.format() << "s\n"; // gives the number of seconds, as double.

@@ -54,15 +54,9 @@ inline double3d_ptr bf_conv_mkl(double3d_ptr ap, double3d_ptr bp)
     MKL_INT tshape[3]={tx,ty,tz};
 
     // give value
-    double input[ax*ay*az], kernel[bx*by*az];
-    for (std::size_t i = 0; i < ax; ++i)
-        for (std::size_t j = 0; j < ay; ++j)
-            for (std::size_t k = 0; k < az; ++k)
-                input[i*ay*az + j*az + k] = a[i][j][k];
-    for (std::size_t i = 0; i < bx; ++i)
-        for (std::size_t j = 0; j < by; ++j)
-            for (std::size_t k = 0; k < bz; ++k)
-                kernel[i*by*bz + j*bz + k] = b[i][j][k];
+    double* input=a.data();
+    double* kernel=b.data();
+
     // temporal variable for MKL's long convolution
     double t[tx*ty*tz];
 
@@ -111,13 +105,8 @@ inline double3d_ptr bf_conv_mkl_2d(double3d_ptr ap, double3d_ptr bp)
     MKL_INT tshape[2]={tx,ty};
 
     // give value
-    double input[ax*ay], kernel[bx*by];
-    for (std::size_t i = 0; i < ax; ++i)
-        for (std::size_t j = 0; j < ay; ++j)
-            input[i*ay + j] = a[i][j][0];
-    for (std::size_t i = 0; i < bx; ++i)
-        for (std::size_t j = 0; j < by; ++j)
-            kernel[i*by + j] = b[i][j][0];
+    double* input=a.data();
+    double* kernel=b.data();
     // temporal variable for MKL's long convolution
     double t[tx*ty];
 
@@ -166,15 +155,8 @@ inline double3d_ptr bf_conv_sparse_mkl( const double3d_ptr& ap,
     MKL_INT tshape[3]={tx,ty,tz};
 
     // give value
-    double input[ax*ay*az], kernel[bx*by*az];
-    for (std::size_t i = 0; i < ax; ++i)
-        for (std::size_t j = 0; j < ay; ++j)
-            for (std::size_t k = 0; k < az; ++k)
-                input[i*ay*az + j*az + k] = a[i][j][k];
-    for (std::size_t i = 0; i < bx; ++i)
-        for (std::size_t j = 0; j < by; ++j)
-            for (std::size_t k = 0; k < bz; ++k)
-                kernel[i*by*bz + j*bz + k] = b[i][j][k];
+    double* input=a.data();
+    double* kernel=b.data();
     // temporal variable for MKL's long convolution
 
     // get stride
@@ -191,16 +173,16 @@ inline double3d_ptr bf_conv_sparse_mkl( const double3d_ptr& ap,
 
     status = vsldConvNewTask(&task,mode,dims,input_shape, kernel_shape, tshape);
     //status = vslConvSetStride(task, start);
-    status = vsldConvExec(task,input, stride, kernel, stride, t, NULL);
+    status = vsldConvExec(task, input, stride, kernel, stride, t, stride);
     status = vslConvDeleteTask(&task);
 
     // extract the center vector
-    double3d_ptr rp = volume_pool.get_double3d(rx,ry,1);
+    double3d_ptr rp = volume_pool.get_double3d(rx,ry,rz);
     double3d& r = *rp;
-    for(int i = 0; i < rx; i++)
-        for(int j = 0; j < ry; j++)
+    for(int i = 0; i < rx; ++i)
+        for(int j = 0; j < ry; ++j)
             for (int k = 0; k < rz; ++k)
-                r[i][j][k] = t[(i+bx-1)*ty*tz+ (j+by-1)*tz + k+bz-1];
+                r[i][j][k] = t[(i*s[0]+bx-1)*ty*tz+ (j*s[1]+by-1)*tz + k*s[2]+bz-1];
 
     return rp;
 }
