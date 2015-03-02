@@ -62,8 +62,6 @@ inline double3d_ptr bf_conv_mkl(double3d_ptr ap, double3d_ptr bp)
     const int mode = VSL_CONV_MODE_DIRECT;//direct convolution
     const int start[3]={bz-1,by-1,bx-1};
 
-    //int stride[3] = {1,1,1};
-
     status = vsldConvNewTask(&task,mode,dims,ashape, bshape, rshape);
     status = vslConvSetStart(task, start);
     status = vsldConvExec(task, a.data(), NULL, b.data(), NULL, r.data(), NULL);
@@ -95,30 +93,37 @@ inline double3d_ptr bf_conv_sparse_mkl( const double3d_ptr& ap,
     double3d_ptr rp = volume_pool.get_double3d(rx,ry,rz);
     double3d& r = *rp;
 
-    // size
-    MKL_INT input_shape[3]={ay,ax,az}, kernel_shape[3]={by,bx,bz};
-    MKL_INT rshape[3]={ry,rx,rz};
+    for (int xs=0; xs<stride[0]; xs++)
+        for (int ys=0; ys<stride[1]; ys++)
+            for (int zs=0; zs<stride[2]; zs++)
+            {
+                // size
+                MKL_INT ashape[3]={az/s[2],ay/s[1],axs/s[0]}, bshape[3]={bz/s[2],by/s[1],bx/s[0]}, rshape[3]={rz/s[2],ry/s[1],rx/s[0]};
 
-    // give value
-    double* input=a.data();
-    double* kernel=b.data();
+                // 3d convolution using MKL
+                VSLConvTaskPtr task;
+                MKL_INT dims=3;
+                int status;
+                const int mode = VSL_CONV_MODE_DIRECT;//direct convolution
+                const int start[3]={(bz-1)/s[2],(by-1)/s[1],(bx-1)/s[0]};
 
-    // data stride
-    int stride[3] = {s[1],s[0],s[2]};
-    //MKL_INT input_shape[3]={ax/s[0],ay/s[1],az/s[2]}, kernel_shape[3]={bx/s[0],by/s[1],bz/s[2]};
+                // data stride
+                int stride[3] = {s[2],s[1],s[0]};
+                //MKL_INT input_shape[3]={ax/s[0],ay/s[1],az/s[2]}, kernel_shape[3]={bx/s[0],by/s[1],bz/s[2]};
 
-    // 2d convolution using MKL
-    VSLConvTaskPtr task;
-    MKL_INT dims=3;
-    int status;
-    const int mode = VSL_CONV_MODE_DIRECT;//direct convolution
-    const int start[3]={by-1,bx-1,bz-1};
+                // temporal subconvolution output
+                double3d_ptr tp = volume_pool.get_double3d(rx,ry,rz);
+                double3d& t = *tp;
 
-    // convolution
-    status = vsldConvNewTask(&task,mode,dims,input_shape, kernel_shape, rshape);
-    status = vslConvSetStart(task, start);
-    status = vsldConvExec(task,input,NULL,kernel,NULL, r.data() ,NULL);
-    status = vslConvDeleteTask(&task);
+                // subconvolution
+                status = vsldConvNewTask(&task,mode,dims,ashape, bshape, rshape);
+                status = vslConvSetStart(task, start);
+                status = vsldConvExec(task, a.data()+, stride, b.data(), stride, r.data(), NULL);
+                status = vslConvDeleteTask(&task);
+
+                // combine subconvolution results
+
+            }
 
     return rp;
 }

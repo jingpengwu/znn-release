@@ -64,7 +64,7 @@ void assert_volume(double3d_ptr ap, double3d_ptr bp)
                 if( a[i][j][k] != b[i][j][k] )
                 {
                     flag = false;
-                    std::cout<<"i: "<< i <<",     j: "<< j <<", k: "<< k <<std::endl;
+                    std::cout<<"i: "<< i <<",   j: "<< j <<",   k: "<< k <<std::endl;
                     std::cout<< "the results are different: " << a[i][j][k]<< " and " << b[i][j][k] << std::endl;
                     break;
                 }
@@ -114,14 +114,14 @@ bool test_mkl(vec3i ashape, vec3i bshape, int times)
 
         // convolution using naive method
         n_timer.resume();
-        rp_n = bf_conv_naive(ap, bp);
-        //rp_n = bf_conv_sparse_naive(ap, bp, s);
+        //rp_n = bf_conv_naive(ap, bp);
+        rp_n = bf_conv_sparse_naive(ap, bp, s);
         n_timer.stop();
 
         // convolution using MKL
         m_timer.resume();
-        rp_m = bf_conv_mkl(ap, bp);
-        //rp_m = bf_conv_sparse_mkl(ap, bp, s);
+        //rp_m = bf_conv_mkl(ap, bp);
+        rp_m = bf_conv_sparse_mkl(ap, bp, s);
         m_timer.stop();
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -129,6 +129,10 @@ bool test_mkl(vec3i ashape, vec3i bshape, int times)
     // show time
     std::cout <<"time cost of naive method: "<< n_timer.format() << std::endl; // gives the number of seconds, as double.
     std::cout <<"time cost of MKL method:   "<< m_timer.format() << std::endl; // gives the number of seconds, as double
+
+    //save volume for further examination
+    volume_utils::save(rp_n, "output_naive.image");
+    volume_utils::save(rp_m, "output_mkl.image");
 
     // assert the output of naive and MKL method is the same
     assert_volume( rp_n, rp_m );
