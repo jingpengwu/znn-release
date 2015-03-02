@@ -786,6 +786,53 @@ inline double3d_ptr transpose(double3d_ptr a)
     return r;
 }
 
+inline double3d_ptr transpose_2D(double3d_ptr a)
+{
+    PROFILE_FUNCTION();
+    std::size_t x = a->shape()[0];
+    std::size_t y = a->shape()[1];
+    std::size_t z = a->shape()[2];
+
+    double3d_ptr r = volume_pool.get_double3d(y,x,z);
+
+    for ( std::size_t i = 0; i < x; ++i )
+    {
+        for ( std::size_t j = 0; j < y; ++j )
+        {
+            for ( std::size_t k = 0; k < z; ++k )
+            {
+                (*r)[j][i][k] = (*a)[i][j][k];
+            }
+        }
+    }
+
+    return r;
+}
+
+// added by Jingpeng Wu
+inline double3d_ptr transpose_3D(double3d_ptr a)
+{
+    PROFILE_FUNCTION();
+    std::size_t x = a->shape()[0];
+    std::size_t y = a->shape()[1];
+    std::size_t z = a->shape()[2];
+
+    double3d_ptr r = volume_pool.get_double3d(z,y,x);
+
+    for ( std::size_t i = 0; i < x; ++i )
+    {
+        for ( std::size_t j = 0; j < y; ++j )
+        {
+            for ( std::size_t k = 0; k < z; ++k )
+            {
+                (*r)[k][j][i] = (*a)[i][j][k];
+            }
+        }
+    }
+
+    return r;
+}
+
 inline void transpose(std::list<double3d_ptr>& vl)
 {
     PROFILE_FUNCTION();

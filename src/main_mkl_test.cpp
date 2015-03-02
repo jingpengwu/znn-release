@@ -110,7 +110,7 @@ bool test_mkl(vec3i ashape, vec3i bshape, int times)
     {
         // randomize volume
         ap = random_volume(ap, i);
-        bp = random_volume(bp, i+1);
+        bp = random_volume(bp, i+2);
 
         // convolution using naive method
         n_timer.resume();
@@ -154,7 +154,7 @@ int main(int argc, char** argv)
         std::cout<< "use default matrix size: 200X200X4, 3X3X1, "<<std::endl;
         vec3i ashape(200,200,4);
         vec3i bshape(3,3,1);
-        int times = 20;
+        int times = 10;
         test_mkl( ashape, bshape, times );
     }
 

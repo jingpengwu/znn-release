@@ -23,6 +23,7 @@
 
 #include "types.hpp"
 //#include "volume_pool.hpp"
+#include "volume_utils.hpp"
 extern "C" {
     #include "mkl_vsl.h"
 }
@@ -30,7 +31,7 @@ extern "C" {
 namespace zi {
 namespace znn {
 
-// 3D convolution using MKL
+// 3D convolution using MKL, transpose volume
 inline double3d_ptr bf_conv_mkl(double3d_ptr ap, double3d_ptr bp)
 {
     double3d& a = *ap;
@@ -52,25 +53,20 @@ inline double3d_ptr bf_conv_mkl(double3d_ptr ap, double3d_ptr bp)
     double3d& r = *rp;
 
     // size
-    MKL_INT input_shape[3]={ay,ax,az}, kernel_shape[3]={by,bx,bz};
-    MKL_INT rshape[3]={ry,rx,rz};
+    MKL_INT ashape[3]={az,ay,ax}, bshape[3]={bz,by,bx}, rshape[3]={rz,ry,rx};
 
-    // give value
-    double* input=a.data();
-    double* kernel=b.data();
-
-    // 2d convolution using MKL
+    // 3d convolution using MKL
     VSLConvTaskPtr task;
     MKL_INT dims=3;
     int status;
     const int mode = VSL_CONV_MODE_DIRECT;//direct convolution
-    const int start[3]={by-1,bx-1,bz-1};
+    const int start[3]={bz-1,by-1,bx-1};
 
     //int stride[3] = {1,1,1};
 
-    status = vsldConvNewTask(&task,mode,dims,input_shape, kernel_shape, rshape);
+    status = vsldConvNewTask(&task,mode,dims,ashape, bshape, rshape);
     status = vslConvSetStart(task, start);
-    status = vsldConvExec(task, input, NULL, kernel, NULL, r.data(), NULL);
+    status = vsldConvExec(task, a.data(), NULL, b.data(), NULL, r.data(), NULL);
     status = vslConvDeleteTask(&task);
 
     return rp;
@@ -100,15 +96,15 @@ inline double3d_ptr bf_conv_sparse_mkl( const double3d_ptr& ap,
     double3d& r = *rp;
 
     // size
-    MKL_INT input_shape[3]={ax,ay,az}, kernel_shape[3]={bx,by,bz};
-    MKL_INT rshape[3]={rx,ry,rz};
+    MKL_INT input_shape[3]={ay,ax,az}, kernel_shape[3]={by,bx,bz};
+    MKL_INT rshape[3]={ry,rx,rz};
 
     // give value
     double* input=a.data();
     double* kernel=b.data();
 
     // data stride
-    int stride[3] = {s[0],s[1],s[2]};
+    int stride[3] = {s[1],s[0],s[2]};
     //MKL_INT input_shape[3]={ax/s[0],ay/s[1],az/s[2]}, kernel_shape[3]={bx/s[0],by/s[1],bz/s[2]};
 
     // 2d convolution using MKL
@@ -116,7 +112,7 @@ inline double3d_ptr bf_conv_sparse_mkl( const double3d_ptr& ap,
     MKL_INT dims=3;
     int status;
     const int mode = VSL_CONV_MODE_DIRECT;//direct convolution
-    const int start[3]={bx-1,by-1,bz-1};
+    const int start[3]={by-1,bx-1,bz-1};
 
     // convolution
     status = vsldConvNewTask(&task,mode,dims,input_shape, kernel_shape, rshape);
@@ -129,5 +125,4 @@ inline double3d_ptr bf_conv_sparse_mkl( const double3d_ptr& ap,
 
 
 }} // namespace zi::znn
-
 #endif // ZNN_CONV_SSE_HPP_INCLUDED
