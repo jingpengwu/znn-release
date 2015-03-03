@@ -155,10 +155,10 @@ int main(int argc, char** argv)
     else
     {
         std::cout<< "argument should be 7 uint numbers." << std::endl;
-        std::cout<< "use default matrix size: 200X200X4, 3X3X1, "<<std::endl;
-        vec3i ashape(200,200,4);
-        vec3i bshape(3,3,1);
-        int times = 10;
+        std::cout<< "use default matrix size: 10X10X1, 5X5X1, "<<std::endl;
+        vec3i ashape(10,10,1);
+        vec3i bshape(5,5,1);
+        int times = 1;
         test_mkl( ashape, bshape, times );
     }
 
