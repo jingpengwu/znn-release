@@ -93,60 +93,65 @@ inline double3d_ptr bf_conv_sparse_mkl( const double3d_ptr& ap,
     double3d_ptr rp = volume_pool.get_double3d(rx,ry,rz);
     double3d& r = *rp;
 
-    // temporal volume size
-    MKL_INT tashape[3]={(az-1)/s[2]+1, (ay-1)/s[1]+1, (ax-1)/s[0]+1};
-    MKL_INT tbshape[3]={(bz-1)/s[2]+1, (by-1)/s[1]+1, (bx-1)/s[0]+1};
-    MKL_INT trshape[3]={(rz-1)/s[2]+1, (ry-1)/s[1]+1, (rx-1)/s[0]+1};
-
     // 3d convolution using MKL
     VSLConvTaskPtr task;
     MKL_INT dims=3;
     int status;
     const int mode = VSL_CONV_MODE_DIRECT;//direct convolution
 
-    // temporal subconvolution output
-    double3d_ptr tap = volume_pool.get_double3d( tashape[0], tashape[1], tashape[2] );
-    double3d& ta = *tap;
-    double3d_ptr tbp = volume_pool.get_double3d( tbshape[0], tbshape[1], tbshape[2] );
-    double3d& tb = *tbp;
-    double3d_ptr trp = volume_pool.get_double3d( trshape[0], trshape[1], trshape[2] );
-    double3d& tr = *trp;
-
     // sparseness
     for (int xs=0; xs<s[0]; xs++)
         for (int ys=0; ys<s[1]; ys++)
             for (int zs=0; zs<s[2]; zs++)
             {
+                // temporal volume size
+                MKL_INT tashape[3]={(az-zs-1)/s[2]+1, (ay-ys-1)/s[1]+1, (ax-xs-1)/s[0]+1};
+                MKL_INT tbshape[3]={(bz-zs-1)/s[2]+1, (by-ys-1)/s[1]+1, (bx-xs-1)/s[0]+1};
+                MKL_INT trshape[3]={tashape[0]-tbshape[0]+1, tashape[1]-tbshape[1]+1, tashape[2]-tbshape[2]+1};
+
+                std::cout<<"tashape: " << tashape[0]<<", "<<tashape[1]<<", "<<tashape[2]<<std::endl;
+                std::cout<<"tbshape: " << tbshape[0]<<", "<<tbshape[1]<<", "<<tbshape[2]<<std::endl;
+                std::cout<<"trshape: " << trshape[0]<<", "<<trshape[1]<<", "<<trshape[2]<<std::endl;
+
+                // temporal subconvolution output
+                double ta[ tashape[0]* tashape[1]* tashape[2] ];
+                double tb[ tbshape[0]* tbshape[1]* tbshape[2] ];
+                double tr[ trshape[0]* trshape[1]* trshape[2] ];
+
                 // prepare input
+                std::cout<<"prepare input ..."<<std::endl;
                 for (std::size_t x=xs, xt=0; x<ax; x+=s[0], xt++)
                     for (std::size_t y=ys, yt=0; y<ay; y+=s[1], yt++)
                         for(std::size_t z=zs, zt=0; z<az; z+=s[2], zt++)
-                            ta[zt][yt][xt] = a[x][y][z];
-                for (std::size_t x=xs, xt=0; x<bx; x+=s[0], xt++)
-                    for (std::size_t y=ys, yt=0; y<by; y+=s[1], yt++)
-                        for(std::size_t z=zs, zt=0; z<bz; z+=s[2], zt++)
-                            tb[zt][yt][xt] = b[x][y][z];
+                            ta[ zt+ yt*tashape[0] + xt*tashape[1]*tashape[0] ] = a[x][y][z];
+                for (int x=bx-xs-1, xt=tbshape[2]-1; x>=0; x-=s[0], xt--)
+                    for (int y=by-ys-1, yt=tbshape[1]-1; y>=0; y-=s[1], yt--)
+                        for(int z=bz-zs-1, zt=tbshape[0]-1; z>=0; z-=s[2], zt--)
+                        {
+                            std::cout<<"zt,yt,xt: "<<zt<<", "<<yt<<", "<<xt<<std::endl;
+                            tb[zt + yt*tbshape[0] + xt*tbshape[1]*tbshape[0]] = b[x][y][z];
+                        }
 
                 // subconvolution
+                std::cout<<"subconvolution..."<<std::endl;
                 status = vsldConvNewTask(&task,mode,dims,tashape, tbshape, trshape);
-                int start[3]={(bz-1)/s[2],(by-1)/s[1],(bx-1)/s[0]};
+                int start[3]={tbshape[0]-1,tbshape[1]-1,tbshape[2]-1};
+                std::cout<< "start: "<<start[0]<<", "<<start[1]<<", "<<start[2]<<std::endl;
+
                 status = vslConvSetStart(task, start);
-                status = vsldConvExec(task, ta.data(), NULL, tb.data(), NULL, tr.data(), NULL);
+                status = vsldConvExec(task, ta, NULL, tb, NULL, tr, NULL);
                 status = vslConvDeleteTask(&task);
 
                 // combine subconvolution results
-                for (std::size_t x=xs, wz=0; wz<tr.shape()[2]; x+=s[0], wz++)
-                    for (std::size_t y=ys, wy=0; wy<tr.shape()[1]; y+=s[1], wy++ )
-                        for (std::size_t z=zs, wx=0; wx<tr.shape()[0]; z+=s[2], wx++)
-                        {
-                            std::cout<< tr[wx][wy][wz] << std::endl;
-                            r[x][y][z]=tr[wx][wy][wz];
-                        }
+                std::cout<< "combine subconvolution results ..."<<std::endl;
+                for (std::size_t x=xs, wx=0; x<rx; x+=s[0], wx++)
+                    for (std::size_t y=ys, wy=0; y<ry; y+=s[1], wy++ )
+                        for (std::size_t z=zs, wz=0; z<rz; z+=s[2], wz++)
+                            r[x][y][z] = tr[wz + wy*trshape[0] + wx*trshape[1]*trshape[0] ];
             }
 
     return rp;
 }
-
 
 }} // namespace zi::znn
 #endif // ZNN_CONV_SSE_HPP_INCLUDED

@@ -1,16 +1,22 @@
 %% prepare the dataset for ZNN
 % Program written by:
 % Jingpeng Wu <jingpeng@princeton.edu>, 2014
-run ../matlab/addpath_recurse
+run ../addpath_recurse
 
 %% parameters
 % the number of batches that need to generate
-BatchNum = 1;
+BatchNum = 200;
 
 %% the training dateset
+Dir = '../../dataset/fish/';
+vol_train = loadtiff([Dir 'data/original/RawInput_8bit_Daan_train.tif']);
+vol_label = loadtiff([Dir 'data/original/ExportBoundaries_8bit_Daan.tif']);
 
-vol_train = loadtiff('fish/data/original/RawInput_8bit_Daan_train.tif');
-vol_label = loadtiff('fish/data/original/ExportBoundaries_8bit_Daan.tif');
+vol_train = loadtiff([Dir 'data/original/RawInput_8bit_Merlin_train.tif']);
+vol_label = loadtiff([Dir 'data/original/ExportBoundaries-8bit-Merlin.tif']);
+
+% the beginning batch ID
+batch_id = 4;
 
 % %% cut volume
 % vol_train = vol_train(end-255:end, end-255:end,:);
@@ -18,9 +24,10 @@ vol_label = loadtiff('fish/data/original/ExportBoundaries_8bit_Daan.tif');
 
 %% divide the volume to small volumes
 vol_size = size(vol_train);
-sub_size = [504 504 127];
-batch_id = 0;
+sub_size = [252 252 127];
+
 for m = 1 : ceil(vol_size(1)/sub_size(1))
+    m
     m1 = (m-1)*sub_size(1) +1;
     m2 = min(m*sub_size(1), vol_size(1));
     for n = 1 : ceil(vol_size(2)/sub_size(2))
@@ -38,15 +45,16 @@ for m = 1 : ceil(vol_size(1)/sub_size(1))
             end
             
             subvol_train = vol_train(m1:m2, n1:n2, k1:k2);
-            export_volume(['fish/data/batch' num2str(batch_id)], subvol_train, 'image');
+            export_volume([Dir 'data/batch' num2str(batch_id)], subvol_train, 'image');
             
             subvol_label = vol_label(m1:m2, n1:n2, k1:k2);
-            export_volume(['fish/data/batch' num2str(batch_id)], subvol_label, 'label');
+            export_volume([Dir 'data/batch' num2str(batch_id)], subvol_label, 'label');
             
             % size of subvolumes
             sz = size(subvol_train);
             % generate the spec files with volume size
-            fname = ['fish/spec/batch' num2str(batch_id) '.spec'];
+            fname = [Dir 'spec/batch' num2str(batch_id) '.spec'];
+            fname
             delete(fname);  fspec = fopen(fname, 'w');
             fprintf(fspec, ['[INPUT1]\npath=./dataset/fish/data/batch' num2str(batch_id) '\n']);
             fprintf(fspec, ['ext=image\nsize=' num2str(sz(1)) ','...
