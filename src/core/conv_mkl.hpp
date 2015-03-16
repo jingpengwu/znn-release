@@ -128,7 +128,7 @@ inline double3d_ptr bf_conv_sparse_mkl( const double3d_ptr& ap,
                     for (int y=by-ys-1, yt=tbshape[1]-1; y>=0; y-=s[1], yt--)
                         for(int z=bz-zs-1, zt=tbshape[0]-1; z>=0; z-=s[2], zt--)
                         {
-                            std::cout<<"zt,yt,xt: "<<zt<<", "<<yt<<", "<<xt<<std::endl;
+                            // std::cout<<"zt,yt,xt: "<<zt<<", "<<yt<<", "<<xt<<std::endl;
                             tb[zt + yt*tbshape[0] + xt*tbshape[1]*tbshape[0]] = b[x][y][z];
                         }
 
