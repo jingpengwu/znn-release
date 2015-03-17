@@ -61,20 +61,19 @@ void assert_volume(double3d_ptr ap, double3d_ptr bp)
         {
             for ( int k=0; k<a.shape()[2]; ++k )
             {
-                std::cout<< "naive: " << a[i][j][k]<< " and MKL:" << b[i][j][k] << std::endl;
                 if( a[i][j][k] != b[i][j][k] )
                 {
                     flag = false;
-                    //std::cout<<"i: "<< i <<",   j: "<< j <<",   k: "<< k <<std::endl;
-                    //std::cout<< "naive: " << a[i][j][k]<< " and MKL:" << b[i][j][k] << std::endl;
+                    std::cout<<"i: "<< i <<",   j: "<< j <<",   k: "<< k <<std::endl;
+                    std::cout<< "naive: " << a[i][j][k]<< " and MKL:" << b[i][j][k] << std::endl;
                     break;
                 }
             }
-            //if(!flag)
-              //  break;
+            if(!flag)
+                break;
         }
-        //if(!flag)
-          //  break;
+        if(!flag)
+            break;
     }
 
     if (flag)
@@ -94,9 +93,6 @@ bool test_mkl(vec3i ashape, vec3i bshape, vec3i s, int times)
     double3d_ptr rp_n;
     double3d_ptr rp_m;
 
-    // sparse convolution test
-    //const vec3i s(2,1,1);
-
     // setup timer
     boost::timer::cpu_timer n_timer;
     n_timer.start();
@@ -115,14 +111,14 @@ bool test_mkl(vec3i ashape, vec3i bshape, vec3i s, int times)
 
         // convolution using naive method
         n_timer.resume();
-        //rp_n = bf_conv_naive(ap, bp);
-        rp_n = bf_conv_sparse_naive(ap, bp, s);
+        rp_n = bf_conv_naive(ap, bp);
+        //rp_n = bf_conv_sparse_naive(ap, bp, s);
         n_timer.stop();
 
         // convolution using MKL
         m_timer.resume();
-        //rp_m = bf_conv_mkl(ap, bp);
-        rp_m = bf_conv_sparse_mkl(ap, bp, s);
+        rp_m = bf_conv_mkl(ap, bp);
+        //rp_m = bf_conv_sparse_mkl(ap, bp, s);
         m_timer.stop();
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////
