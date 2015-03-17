@@ -82,7 +82,7 @@ void assert_volume(double3d_ptr ap, double3d_ptr bp)
 }
 
 // test MKL performance, added by Jingpeng Wu
-bool test_mkl(vec3i ashape, vec3i bshape, int times)
+bool test_mkl(vec3i ashape, vec3i bshape, vec3i s, int times)
 {
     std::cout<< "start testing MKL ..." <<std::endl;
     // initialization
@@ -95,7 +95,7 @@ bool test_mkl(vec3i ashape, vec3i bshape, int times)
     double3d_ptr rp_m;
 
     // sparse convolution test
-    const vec3i s(2,1,1);
+    //const vec3i s(2,1,1);
 
     // setup timer
     boost::timer::cpu_timer n_timer;
@@ -145,13 +145,14 @@ int main(int argc, char** argv)
 {
     std::cout<< "test MKL only" << std::endl;
 
-    if (argc == 8)
+    if (argc == 11)
     {
         // get the shape
         vec3i ashape( atoi(argv[1]), atoi(argv[2]), atoi(argv[3]) );
         vec3i bshape( atoi(argv[4]), atoi(argv[5]), atoi(argv[6]) );
-        int times = atoi( argv[7] );
-        test_mkl( ashape, bshape, times );
+        vec3i s( atoi(argv[7]), atoi(argv[8]), atoi(argv[9]) );
+        int times = atoi( argv[10] );
+        test_mkl( ashape, bshape, s, times );
     }
     else
     {
@@ -159,8 +160,9 @@ int main(int argc, char** argv)
         std::cout<< "use default matrix size: 10X10X1, 5X5X1, "<<std::endl;
         vec3i ashape(10,10,1);
         vec3i bshape(5,5,1);
+        vec3i s(2,2,1);
         int times = 1;
-        test_mkl( ashape, bshape, times );
+        test_mkl( ashape, bshape, s, times );
     }
 
     return 0;
