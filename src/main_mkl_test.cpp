@@ -61,19 +61,20 @@ void assert_volume(double3d_ptr ap, double3d_ptr bp)
         {
             for ( int k=0; k<a.shape()[2]; ++k )
             {
+                std::cout<< "naive: " << a[i][j][k]<< " and MKL:" << b[i][j][k] << std::endl;
                 if( a[i][j][k] != b[i][j][k] )
                 {
                     flag = false;
-                    std::cout<<"i: "<< i <<",   j: "<< j <<",   k: "<< k <<std::endl;
-                    std::cout<< "the results are different: " << a[i][j][k]<< " and " << b[i][j][k] << std::endl;
+                    //std::cout<<"i: "<< i <<",   j: "<< j <<",   k: "<< k <<std::endl;
+                    //std::cout<< "naive: " << a[i][j][k]<< " and MKL:" << b[i][j][k] << std::endl;
                     break;
                 }
             }
-            if(!flag)
-                break;
+            //if(!flag)
+              //  break;
         }
-        if(!flag)
-            break;
+        //if(!flag)
+          //  break;
     }
 
     if (flag)
@@ -94,7 +95,7 @@ bool test_mkl(vec3i ashape, vec3i bshape, int times)
     double3d_ptr rp_m;
 
     // sparse convolution test
-    const vec3i s(2,2,1);
+    const vec3i s(2,1,1);
 
     // setup timer
     boost::timer::cpu_timer n_timer;
