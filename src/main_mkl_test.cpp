@@ -111,14 +111,14 @@ bool test_mkl(vec3i ashape, vec3i bshape, vec3i s, int times)
 
         // convolution using naive method
         n_timer.resume();
-        rp_n = bf_conv_naive(ap, bp);
-        //rp_n = bf_conv_sparse_naive(ap, bp, s);
+        //rp_n = bf_conv_naive(ap, bp);
+        rp_n = bf_conv_sparse_naive(ap, bp, s);
         n_timer.stop();
 
         // convolution using MKL
         m_timer.resume();
-        rp_m = bf_conv_mkl(ap, bp);
-        //rp_m = bf_conv_sparse_mkl(ap, bp, s);
+        //rp_m = bf_conv_mkl(ap, bp);
+        rp_m = bf_conv_sparse_mkl(ap, bp, s);
         m_timer.stop();
     }
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////

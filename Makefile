@@ -3,14 +3,14 @@ CPP		=	g++
 CPP_FLAGS	= 	-g
 INC_FLAGS	=	-I. -I./src -I./zi -I/usr/local/boost/1.55.0/include 
 LIB_FLAGS	=	-L. -L/usr/local/boost/1.55.0/lib64 
-OPT_FLAGS	=	-DNDEBUG -O3 -march=native
+OPT_FLAGS	=	-DNDEBUG -O2 #3 -march=native
 OTH_FLAGS	=	-Wall -Wextra -Wno-unused-variable
 
 LIBS		=	-lfftw3 -lpthread -lrt -lfftw3_threads
 BOOST_LIBS	=	-lboost_program_options -lboost_regex -lboost_filesystem -lboost_system -lboost_timer
 
 znn: src/main.cpp
-	$(CPP) -o $(ODIR)/znn src/main.cpp $(CPP_FLAGS) $(INC_FLAGS) $(OPT_FLAGS) $(OTH_FLAGS) $(LIBS) $(BOOST_LIBS) 
+	$(CPP) -o $(ODIR)/znn src/main.cpp $(CPP_FLAGS) $(INC_FLAGS) $(LIB_FLAGS) $(OPT_FLAGS) $(OTH_FLAGS) $(LIBS) $(BOOST_LIBS) 
 
 
 # intel MKL 
