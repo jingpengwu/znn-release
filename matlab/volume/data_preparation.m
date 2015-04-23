@@ -14,11 +14,11 @@ Dir = '../../dataset/fish/';
 vol_train = loadtiff([Dir 'data/original/Daan_raw.tif']);
 vol_label = loadtiff([Dir 'data/original/Daan_label.tif']);
 
-vol_train = loadtiff([Dir 'data/original/Kyle_raw.tif']);
-vol_label = loadtiff([Dir 'data/original/Kyle_label.tif']);
-% % 
-vol_train = loadtiff([Dir 'data/original/Merlin_raw2.tif']);
-vol_label = loadtiff([Dir 'data/original/Merlin_label2.tif']);
+% vol_train = loadtiff([Dir 'data/original/Kyle_raw.tif']);
+% vol_label = loadtiff([Dir 'data/original/Kyle_label.tif']);
+% % % 
+% vol_train = loadtiff([Dir 'data/original/Merlin_raw2.tif']);
+% vol_label = loadtiff([Dir 'data/original/Merlin_label2.tif']);
 
 % vol_train = loadtiff([Dir 'data/original/raw.tif']);
 

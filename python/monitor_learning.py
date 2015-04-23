@@ -16,6 +16,7 @@ Dir = '../experiments/VeryDeep2_w109_V1/network/'
 #Dir = '../experiments/VGG_L10/network/'
 #Dir = '../experiments/Deep_N4/network/'
 Dir = '../experiments/VeryDeep2HR_w65x9/network/'
+Dir = '../experiments/VeryDeep2_S1/network/'
 
 # parameters to smooth curve
 smooth_flag = True
