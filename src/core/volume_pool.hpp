@@ -95,6 +95,8 @@ public:
         std::cout << "Used: " << (used_memory_>>20) << " MB\n"
                   << "Cash: " << (cached_memory_>>20) << " MB" << std::endl;
     }
+
+
 }; //  class cache_manager
 
 namespace {

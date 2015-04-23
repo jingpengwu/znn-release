@@ -2,8 +2,6 @@ znn-release
 ===========
 Multi-core CPU implementation of deep learning for 2D and 3D convolutional networks (ConvNets).
 
-The direct convolution can be computed using intel MKL.
-
 
 
 Required libraries
@@ -14,30 +12,17 @@ Currently we only support linux environments.
 |:-----:|-------------------|
 |[fftw](http://www.fftw.org/)|libfftw3-dev|
 |[boost](http://www.boost.org/)|libboost-all-dev|
-|[MKL](https://software.intel.com/en-us/intel-mkl)|intel MKL 11.1|
 
 
-[Setup MKL enviroment](https://software.intel.com/sites/products/documentation/doclib/iss/2013/compiler/cpp-lin/)
----------------
-    module load intel
-    module list
-    source <intel-mkl-install-dir>/bin/compilervars.sh intel64 
 
-Compile
+Compile & clean
 ---------------
     make
-    make mkl
-    make mkl_test
+    make clean
 
 If compile is successful, an executalbe named **znn** will be generated under the directory [bin](./bin/).
-#### binary files:
-* znn -- normal compilation 
-* znn_mkl -- znn using convolution from intel MKL (need MKL installed)
-* mkl_test -- compare the convolution of MKL and naive implementation
 
-Clean
----------------
-    make clean
+
 
 Directories
 -----------

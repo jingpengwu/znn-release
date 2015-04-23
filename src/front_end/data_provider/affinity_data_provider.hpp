@@ -177,15 +177,14 @@ protected:
 public:
 	affinity_data_provider( const std::string& fname, 
 						    std::vector<vec3i> in_szs,
-						    std::vector<vec3i> out_szs,
-						    bool mirroring = false )
+						    std::vector<vec3i> out_szs )
 		: volume_data_provider()
 	{
 		in_szs_ = in_szs;
 		out_szs_ = out_szs;
-		set_FoVs();
+
 		load(fname);
-		init(mirroring);
+		init();
 	}
 
 	virtual ~affinity_data_provider()

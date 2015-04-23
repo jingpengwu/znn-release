@@ -19,7 +19,6 @@
 
 #include "front_end/options.hpp"
 #include "core/network.hpp"
-#include "core/bf_conv.hpp"
 
 #include <iostream>
 #include <zi/time.hpp>
@@ -49,6 +48,4 @@ int main(int argc, char** argv)
     {
         net.train();
     }
-
-    return 0;
 }

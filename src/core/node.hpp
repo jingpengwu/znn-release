@@ -52,7 +52,7 @@ private:
     node_ptr        out_   ;
     double3d_ptr    W_     ;
     complex3d_ptr   fft_   ;
-    vec3i           sparse_;    
+    vec3i           sparse_;
 
     // norm
     double          norm_;

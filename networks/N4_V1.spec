@@ -4,7 +4,7 @@ size=1
 [INPUT_C1]
 size=4,4,1
 init_type=Uniform
-init_params=0.05
+init_params=0.1
 
 [C1]
 size=48
@@ -29,7 +29,7 @@ filter_stride=2,2,1
 [C2_C3]
 size=4,4,1
 init_type=Uniform
-init_params=0.05
+init_params=0.1
 
 [C3]
 size=48
@@ -41,7 +41,7 @@ filter_stride=2,2,1
 [C3_C4]
 size=4,4,1
 init_type=Uniform
-init_params=0.05
+init_params=0.1
 
 [C4]
 size=48
@@ -68,4 +68,3 @@ size=1,1,1
 [OUTPUT]
 size=2
 activation=linear
-act_params=1,0
