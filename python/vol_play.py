@@ -6,11 +6,11 @@ Created on Mon Dec 15 17:11:42 2014
 """
 
 import numpy as np
- 
+
 # parameters
 chann_fname = '../dataset/fish/data/batch92.image'
-#out_fname = '../experiments/VeryDeep2_w109/output/out92.1'
-out_fname = '../experiments/VGG_L9/output/out92.1'
+out_fname = '../experiments/VeryDeep2_w109/output/out92.1'
+#out_fname = '../experiments/VGG_L9/output/out92.1'
 #out_fname = '../experiments/Deep_N4/output/out92.1'
 
 #%% process file name
@@ -22,7 +22,7 @@ def get_size_fname( fname ):
     else:
         sfname = fname + '.size'
     return sfname
-    
+
 out_sz_fname   = get_size_fname(out_fname)
 chann_sz_fname = get_size_fname(chann_fname)
 
@@ -38,8 +38,10 @@ chann_sz = np.fromfile( chann_sz_fname, dtype='uint32' )[:3][::-1]
 chann = chann.reshape(chann_sz)
 
 
-#%% 
+#%%
 import emirt
 #emirt.show.vol_slider(vol, cmap='gray')
-com = emirt.show.compare_vol(chann[:,104:-104,104:-104], out)
+com = emirt.show.CompareVol(chann[:,:,:], out)
 com.vol_compare_slice()
+import time
+time.sleep(60)

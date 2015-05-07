@@ -6,44 +6,50 @@ clear
 run ../addpath_recurse
 
 %% parameters
-% the maximum number of batches that need to generate
-BatchNum = 200;
+
 
 % the training dateset
 Dir = '../../dataset/fish/';
 vol_train = loadtiff([Dir 'data/original/Daan_raw.tif']);
 vol_label = loadtiff([Dir 'data/original/Daan_label.tif']);
 
-% vol_train = loadtiff([Dir 'data/original/Kyle_raw.tif']);
-% vol_label = loadtiff([Dir 'data/original/Kyle_label.tif']);
-% % % 
-% vol_train = loadtiff([Dir 'data/original/Merlin_raw2.tif']);
-% vol_label = loadtiff([Dir 'data/original/Merlin_label2.tif']);
+vol_train = loadtiff([Dir 'data/original/Kyle_raw.tif']);
+vol_label = loadtiff([Dir 'data/original/Kyle_label.tif']);
+% % % % 
+vol_train = loadtiff([Dir 'data/original/Merlin_raw2.tif']);
+vol_label = loadtiff([Dir 'data/original/Merlin_label2.tif']);
 
 % vol_train = loadtiff([Dir 'data/original/raw.tif']);
 
 % the beginning batch ID
-batch_id = 24-1;
+batch_id = 91-1;
 
+% the maximum number of batches that need to generate
+BatchNum = 200;
+% subvolume size
+sub_size = [6000 6000 5000];
+
+isdownsample = false;
 
 %% shrink volume
-sz = size( vol_train );
-new_sz = floor(sz/2);
-new_sz(3) = sz(3);
-new_vol_train = zeros(new_sz, 'uint8');
-new_vol_label = zeros(new_sz, 'uint8');
-for k = 1 : sz(3)
-    new_vol_train(:,:,k) = imresize(vol_train(:,:,k), new_sz(1:2));
-    new_vol_label(:,:,k) = imresize(vol_label(:,:,k), new_sz(1:2), 'nearest');
+if isdownsample
+    sz = size( vol_train );
+    new_sz = floor(sz/2);
+    new_sz(3) = sz(3);
+    new_vol_train = zeros(new_sz, 'uint8');
+    new_vol_label = zeros(new_sz, 'uint8');
+    for k = 1 : sz(3)
+        new_vol_train(:,:,k) = imresize(vol_train(:,:,k), new_sz(1:2));
+        new_vol_label(:,:,k) = imresize(vol_label(:,:,k), new_sz(1:2), 'nearest');
+    end
+    
+    vol_train = new_vol_train;
+    vol_label = new_vol_label;
 end
-
-vol_train = new_vol_train;
-vol_label = new_vol_label;
 
 
 %% divide the volume to small volumes
 vol_size = size(vol_train);
-sub_size = [6000 6000 5000];
 
 for m = 1 : ceil(vol_size(1)/sub_size(1))
     m
