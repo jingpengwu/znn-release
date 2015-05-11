@@ -574,7 +574,7 @@ public:
         , cost_fn_(_op->create_cost_function())
         , train_monitor_(new learning_monitor("train",_op->create_cost_function()))
         , test_monitor_(new learning_monitor("test",_op->create_cost_function()))
-        , eta_(0.01)      
+        , eta_(0.01)
     {
         if ( !construct_network() )
         {

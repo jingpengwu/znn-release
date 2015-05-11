@@ -20,7 +20,7 @@
 #define ZNN_DATA_SPEC_HPP_INCLUDED
 
 #include <zi/zargs/parser.hpp>
-
+#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp>
 
 
