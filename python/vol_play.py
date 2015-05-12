@@ -8,10 +8,12 @@ Created on Mon Dec 15 17:11:42 2014
 import numpy as np
 
 # parameters
-chann_fname = '../dataset/fish/data/batch92.image'
-out_fname = '../experiments/VeryDeep2_w109/output/out92.1'
-#out_fname = '../experiments/VGG_L9/output/out92.1'
-#out_fname = '../experiments/Deep_N4/output/out92.1'
+batchid = 91
+chann_fname = '../dataset/fish/data/batch{}.image'.format( batchid )
+out_fname = '../experiments/VeryDeep2HR_w65x9/output/out{}.1'.format( batchid )
+#out_fname = '../experiments/VeryDeep2_w109/output/out{}.1'.format( batchid )
+#out_fname = '../experiments/VGG_L9/output/out{}.1'.format( batchid )
+#out_fname = '../experiments/Deep_N4/output/out{}.1'.format( batchid )
 
 #%% process file name
 def get_size_fname( fname ):

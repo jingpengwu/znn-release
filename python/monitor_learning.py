@@ -88,7 +88,7 @@ test_iter = test_iter[:test_minEle]
 test_err  = test_err[:test_minEle]
 test_cls  = test_cls[:test_minEle]
 
-# plot
+#%% plot
 fig = plt.figure(figsize=(15,5))
 
 fig_err = fig.add_subplot(121)
@@ -96,7 +96,7 @@ fig_err.plot(train_iter, train_err,'-k', test_iter, test_err, '-r')
 fig_err.set_title('cost')
 fig_err.set_ylabel('cross entropy')
 fig_err.set_xlabel('iterartion')
-fig_err.set_ylim([0, train_err.max()])
+fig_err.set_ylim([0, max(train_err.max(), train_cls.max())])
 fig_err.legend(('train', 'test'), loc=0)
 
 fig_cls = fig.add_subplot(122)
@@ -104,7 +104,7 @@ fig_cls.plot(train_iter, train_cls,'-k', test_iter, test_cls, '-r')
 fig_cls.set_title('classification error')
 fig_cls.set_ylabel('classification error')
 fig_cls.set_xlabel('iteration')
-fig_cls.set_ylim([0, train_cls.max()])
+fig_cls.set_ylim([0, max(train_err.max(), train_cls.max())])
 fig_cls.legend(('train', 'test'), loc=0)
 fig.show()
 
