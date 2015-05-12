@@ -1,8 +1,13 @@
 import numpy as np
 cimport numpy as np
 
-def run_forward(np.ndarray[double, ndim=3, mode="c"] input,\
-                np.ndarray[double, ndim=3, mode="c"] output):
+
+cdef extern from "znn.cpp":
+    inline void pyznn_forward(   double* input_py,  unsigned int iz, unsigned int iy, unsigned int ix,\
+                        double* output_py, unsigned int oz, unsigned int oy, unsigned int ox)
+
+def run_forward(np.ndarray[double, ndim=3, mode="c"] input  not None,\
+                np.ndarray[double, ndim=3, mode="c"] output not None):
     """
     run the forward pass of znn
     """
@@ -13,4 +18,5 @@ def run_forward(np.ndarray[double, ndim=3, mode="c"] input,\
     cdef int oy = output.shape[1]
     cdef int ox = output.shape[2]
     # cdef string config_fpath = "forward.config"
-    znn_forward(&input[0,0,0], iz, iy, ix, &output[0,0,0], oz, oy, ox )
+    pyznn_forward(  &input[0,0,0],  iz, iy, ix,
+                    &output[0,0,0], oz, oy, ox )
