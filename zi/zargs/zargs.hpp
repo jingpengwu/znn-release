@@ -17,16 +17,15 @@
 //
 
 #ifndef ZI_ZARGS_ZARGS_HPP
-#define ZI_ZARGS_ZARGS_HPP 1
+#define ZI_ZARGS_ZARGS_HPP
 
 #include <zi/zargs/arguments.hpp>
 #include <zi/utility/exception.hpp>
-
 #include <zi/bits/cstdint.hpp>
 
 #define ZiARG_DEFINITION( _name, _default, _desc, _type, _type_str)     \
                                                                         \
-    namespace __zi_arg_namespace_for_ ## _name {                        \
+    inline namespace __zi_arg_namespace_for_ ## _name {                        \
                                                                         \
         _type ZiARG_ ## _name = _default;                               \
         class arg_handler_ ## _name :                                   \
@@ -38,30 +37,30 @@
                                                                         \
         public:                                                         \
                                                                         \
-            arg_handler_ ## _name()                                     \
+            inline arg_handler_ ## _name()                                     \
             {                                                           \
                 zi::zargs_::arguments::instance().                      \
                     register_handler( this );                           \
             }                                                           \
                                                                         \
-            std::string get_name() const                                \
+            inline std::string get_name() const                                \
             {                                                           \
                 return #_name;                                          \
             }                                                           \
-            std::string get_type() const                                \
+            inline std::string get_type() const                                \
             {                                                           \
                 return #_type_str;                                      \
             }                                                           \
-            std::string get_default() const                             \
+            inline std::string get_default() const                             \
             {                                                           \
                 return #_default;                                       \
             }                                                           \
-            std::string get_description() const                         \
+            inline std::string get_description() const                         \
             {                                                           \
                 return _desc;                                           \
             }                                                           \
                                                                         \
-            bool parse( std::list< std::string > &q )                   \
+            inline bool parse( std::list< std::string > &q )                   \
             {                                                           \
                 if ( matcher_.match( #_name, q ) )                      \
                 {                                                       \
@@ -79,7 +78,7 @@
             }                                                           \
         };                                                              \
                                                                         \
-        arg_handler_ ## _name arg_handler_ ## _name ## _inst;           \
+        inline arg_handler_ ## _name arg_handler_ ## _name ## _inst;           \
     }                                                                   \
                                                                         \
     using __zi_arg_namespace_for_ ## _name::ZiARG_ ## _name

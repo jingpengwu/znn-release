@@ -8,9 +8,9 @@ Created on Mon Dec 15 17:11:42 2014
 import numpy as np
 
 # parameters
-batchid = 91
+batchid = 92
 chann_fname = '../dataset/fish/data/batch{}.image'.format( batchid )
-out_fname = '../experiments/VeryDeep2HR_w65x9/output/out{}.1'.format( batchid )
+out_fname = '../experiments/VeryDeep2HR_w65x9/output2/out{}.1'.format( batchid )
 #out_fname = '../experiments/VeryDeep2_w109/output/out{}.1'.format( batchid )
 #out_fname = '../experiments/VGG_L9/output/out{}.1'.format( batchid )
 #out_fname = '../experiments/Deep_N4/output/out{}.1'.format( batchid )
@@ -45,5 +45,5 @@ import emirt
 #emirt.show.vol_slider(vol, cmap='gray')
 com = emirt.show.CompareVol(chann[:,:,:], out)
 com.vol_compare_slice()
-import time
-time.sleep(60)
+#import time
+#time.sleep(60)

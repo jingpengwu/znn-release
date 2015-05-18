@@ -519,7 +519,7 @@ public:
     }
 
 
-private:
+public:
     void prepare_testing()
     {
         // optimize for training (fft vs non fft)
@@ -545,7 +545,7 @@ private:
             export_train_information();
         }
     }
-
+private:
     void export_train_information()
     {
         STRONG_ASSERT(op->test_freq * op->check_freq > 0);

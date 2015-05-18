@@ -5,21 +5,20 @@
 
 using namespace zi::znn;
 
-ZiARG_string(options, "", "Option file path");
-ZiARG_bool(test_only, true, "Test only");
-
-inline void pyznn_forward(    double* input_py,  unsigned int iz, unsigned int iy, unsigned int ix,
-                            double* output_py, unsigned int oz, unsigned int oy, unsigned int ox)
+inline void prepare_test_c(string ftconf)
 {
     // options, create fake main function parameters
-    char *argv[] = { "run_znn_forward", "--options=forward.config", NULL };
-    int argc=2;
-    zi::parse_arguments(argc, argv);
-    options_ptr op = options_ptr(new options(ZiARG_options));
+    // std::string path = "forward.config";
+    options_ptr op = options_ptr(new options( ftconf ));
     op->save();
     // create network
     network net(op);
+    net.prepare_testing();
+}
 
+inline void pyznn_forward_c(    double* input_py,  unsigned int iz, unsigned int iy, unsigned int ix,
+                                double* output_py, unsigned int oz, unsigned int oy, unsigned int ox)
+{
     // initialization
     double3d_ptr pinput = volume_pool.get_double3d(ix,iy,iz);
     double3d& input = *pinput;
@@ -37,6 +36,7 @@ inline void pyznn_forward(    double* input_py,  unsigned int iz, unsigned int i
 
     // prepare output
     std::list<double3d_ptr> poutputs;
+
     poutputs = net.run_forward(pinputs);
     double3d& output = *(poutputs.front());
 

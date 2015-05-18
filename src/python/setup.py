@@ -3,7 +3,7 @@ from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
 setup(ext_modules = cythonize(Extension(
-           "pythonznn",                                # the extesion name
+           "pyznn",                                # the extesion name
            # the Cython source and additional C++ source files
            sources=["pyznn.pyx", "znn.cpp"],
            language="c++",

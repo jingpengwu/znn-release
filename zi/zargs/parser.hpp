@@ -17,7 +17,7 @@
 //
 
 #ifndef ZI_ZARGS_PARSER_HPP
-#define ZI_ZARGS_PARSER_HPP 1
+#define ZI_ZARGS_PARSER_HPP
 
 #include <zi/zargs/detail/string_utils.hpp>
 #include <zi/zargs/detail/lexical_cast.hpp>

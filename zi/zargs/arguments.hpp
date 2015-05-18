@@ -17,7 +17,7 @@
 //
 
 #ifndef ZI_ZARGS_ARGUMENTS_HPP
-#define ZI_ZARGS_ARGUMENTS_HPP 1
+#define ZI_ZARGS_ARGUMENTS_HPP
 
 #include <zi/zargs/parser.hpp>
 #include <zi/zargs/matcher.hpp>
