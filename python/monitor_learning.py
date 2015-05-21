@@ -12,9 +12,9 @@ import scipy as sp
 #%% parameters
 # directories
 Dir = '../experiments/VeryDeep2_w109/network_overfitting/'
-#Dir = '../experiments/VGG_L9/network/'
+Dir = '../experiments/VGG_L7/network/'
 #Dir = '../experiments/N4/network_10nm/'
-Dir = '../experiments/VeryDeep2HR_w65x9/network2/'
+#Dir = '../experiments/VeryDeep2HR_w65x9/network/'
 #Dir = '../experiments/VeryDeep2_S1/network/'
 #Dir = '../experiments/N3/network/'
 
