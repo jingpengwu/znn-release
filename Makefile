@@ -14,11 +14,11 @@ znn: src/main.cpp
 
 
 # intel MKL
-CC		=	icpc
-CC_FLAGS	=	-O3 -AVX -AVX2 -xHost -ipo -static-intel
+CC		=	/opt/intel/bin/icpc
+CC_FLAGS	=	-O3 -AVX2 -xHost -ipo -static-intel
 DEBUG_FLAGS	=	-g -debug
-INC_MKL_FLAGS	=	-I. -I./src -I./zi -I/usr/local/boost/1.55.0/include -I/opt/intel/composer_xe_2013_sp1.4.211/mkl/include/
-LIB_MKL_FLAGS	=	-L/opt/intel/composer_xe_2013_sp1.4.211/mkl/lib/intel64/ -L/opt/intel/composer_xe_2013_sp1.4.211/compiler/lib/intel64 -L. -L/usr/local/boost/1.55.0/lib64
+INC_MKL_FLAGS	=	-I. -I./src -I./zi -I/usr/local/boost/1.55.0/include -I/opt/intel/composer_xe_2013_sp1.4.211/mkl/include/ -I/opt/intel/mkl/include/
+LIB_MKL_FLAGS	=	-L/opt/intel/composer_xe_2013_sp1.4.211/mkl/lib/intel64/ -L/opt/intel/composer_xe_2013_sp1.4.211/compiler/lib/intel64 -L. -L/usr/local/boost/1.55.0/lib64 -L/opt/intel/mkl/lib/intel64
 MKL_FLAGS	=	-lmkl_core -lm -lmkl_intel_lp64 -lmkl_sequential
 
 .PHONY: mkl mkl_test clean

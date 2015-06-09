@@ -7,12 +7,16 @@ from libcpp.string cimport string
 cdef extern from "znn.cpp":
     inline void pyznn_forward_c(    double* input_py,  unsigned int iz, unsigned int iy, unsigned int ix,\
                                     double* output_py, unsigned int oz, unsigned int oy, unsigned int ox)
-    inline void prepare_test_c( string )
+    inline void feedforward_c( string )
+    inline void train_c( string )
 
-
-def prepare_testing( ftconf_py ):
+def feedforward( ftconf_py ):
     cdef string ftconf_c = ftconf_py
-    prepare_test_c( ftconf_c )
+    feedforward_c( ftconf_c )
+
+def train( ftconf_py ):
+    cdef string ftconf_c = ftconf_py
+    train_c( ftconf_c )
 
 def run_forward(np.ndarray[double, ndim=3, mode="c"] input  not None,\
                 np.ndarray[double, ndim=3, mode="c"] output not None):

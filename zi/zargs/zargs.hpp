@@ -25,7 +25,7 @@
 
 #define ZiARG_DEFINITION( _name, _default, _desc, _type, _type_str)     \
                                                                         \
-    inline namespace __zi_arg_namespace_for_ ## _name {                        \
+    namespace __zi_arg_namespace_for_ ## _name {                        \
                                                                         \
         _type ZiARG_ ## _name = _default;                               \
         class arg_handler_ ## _name :                                   \
@@ -78,7 +78,7 @@
             }                                                           \
         };                                                              \
                                                                         \
-        inline arg_handler_ ## _name arg_handler_ ## _name ## _inst;           \
+        arg_handler_ ## _name arg_handler_ ## _name ## _inst;           \
     }                                                                   \
                                                                         \
     using __zi_arg_namespace_for_ ## _name::ZiARG_ ## _name

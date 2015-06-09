@@ -1126,8 +1126,9 @@ int __pyx_module_is_main_pyznn = 0;
 static PyObject *__pyx_builtin_ValueError;
 static PyObject *__pyx_builtin_range;
 static PyObject *__pyx_builtin_RuntimeError;
-static PyObject *__pyx_pf_5pyznn_prepare_testing(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_path_py); /* proto */
-static PyObject *__pyx_pf_5pyznn_2run_forward(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_input, PyArrayObject *__pyx_v_output); /* proto */
+static PyObject *__pyx_pf_5pyznn_feedforward(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ftconf_py); /* proto */
+static PyObject *__pyx_pf_5pyznn_2train(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ftconf_py); /* proto */
+static PyObject *__pyx_pf_5pyznn_4run_forward(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_input, PyArrayObject *__pyx_v_output); /* proto */
 static int __pyx_pf_5numpy_7ndarray___getbuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info, int __pyx_v_flags); /* proto */
 static void __pyx_pf_5numpy_7ndarray_2__releasebuffer__(PyArrayObject *__pyx_v_self, Py_buffer *__pyx_v_info); /* proto */
 static char __pyx_k_B[] = "B";
@@ -1160,14 +1161,15 @@ static char __pyx_k_input[] = "input";
 static char __pyx_k_numpy[] = "numpy";
 static char __pyx_k_pyznn[] = "pyznn";
 static char __pyx_k_range[] = "range";
+static char __pyx_k_train[] = "train";
 static char __pyx_k_import[] = "__import__";
 static char __pyx_k_output[] = "output";
-static char __pyx_k_path_c[] = "path_c";
-static char __pyx_k_path_py[] = "path_py";
+static char __pyx_k_ftconf_c[] = "ftconf_c";
+static char __pyx_k_ftconf_py[] = "ftconf_py";
 static char __pyx_k_ValueError[] = "ValueError";
+static char __pyx_k_feedforward[] = "feedforward";
 static char __pyx_k_run_forward[] = "run_forward";
 static char __pyx_k_RuntimeError[] = "RuntimeError";
-static char __pyx_k_prepare_testing[] = "prepare_testing";
 static char __pyx_k_ndarray_is_not_C_contiguous[] = "ndarray is not C contiguous";
 static char __pyx_k_usr_people_jingpeng_seungmount[] = "/usr/people/jingpeng/seungmount/research/Jingpeng/01_ZNN/znn-release/src/python/pyznn.pyx";
 static char __pyx_k_unknown_dtype_code_in_numpy_pxd[] = "unknown dtype code in numpy.pxd (%d)";
@@ -1180,6 +1182,9 @@ static PyObject *__pyx_kp_u_Format_string_allocated_too_shor_2;
 static PyObject *__pyx_kp_u_Non_native_byte_order_not_suppor;
 static PyObject *__pyx_n_s_RuntimeError;
 static PyObject *__pyx_n_s_ValueError;
+static PyObject *__pyx_n_s_feedforward;
+static PyObject *__pyx_n_s_ftconf_c;
+static PyObject *__pyx_n_s_ftconf_py;
 static PyObject *__pyx_n_s_import;
 static PyObject *__pyx_n_s_input;
 static PyObject *__pyx_n_s_ix;
@@ -1194,13 +1199,11 @@ static PyObject *__pyx_n_s_output;
 static PyObject *__pyx_n_s_ox;
 static PyObject *__pyx_n_s_oy;
 static PyObject *__pyx_n_s_oz;
-static PyObject *__pyx_n_s_path_c;
-static PyObject *__pyx_n_s_path_py;
-static PyObject *__pyx_n_s_prepare_testing;
 static PyObject *__pyx_n_s_pyznn;
 static PyObject *__pyx_n_s_range;
 static PyObject *__pyx_n_s_run_forward;
 static PyObject *__pyx_n_s_test;
+static PyObject *__pyx_n_s_train;
 static PyObject *__pyx_kp_u_unknown_dtype_code_in_numpy_pxd;
 static PyObject *__pyx_kp_s_usr_people_jingpeng_seungmount;
 static PyObject *__pyx_tuple_;
@@ -1211,73 +1214,75 @@ static PyObject *__pyx_tuple__5;
 static PyObject *__pyx_tuple__6;
 static PyObject *__pyx_tuple__7;
 static PyObject *__pyx_tuple__9;
+static PyObject *__pyx_tuple__11;
 static PyObject *__pyx_codeobj__8;
 static PyObject *__pyx_codeobj__10;
+static PyObject *__pyx_codeobj__12;
 
 /* "pyznn.pyx":13
+ *     inline void train_c( string )
  * 
- * 
- * def prepare_testing( path_py ):             # <<<<<<<<<<<<<<
- *     cdef string path_c = path_py
- *     prepare_test_c( path_c )
+ * def feedforward( ftconf_py ):             # <<<<<<<<<<<<<<
+ *     cdef string ftconf_c = ftconf_py
+ *     feedforward_c( ftconf_c )
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5pyznn_1prepare_testing(PyObject *__pyx_self, PyObject *__pyx_v_path_py); /*proto*/
-static PyMethodDef __pyx_mdef_5pyznn_1prepare_testing = {"prepare_testing", (PyCFunction)__pyx_pw_5pyznn_1prepare_testing, METH_O, 0};
-static PyObject *__pyx_pw_5pyznn_1prepare_testing(PyObject *__pyx_self, PyObject *__pyx_v_path_py) {
+static PyObject *__pyx_pw_5pyznn_1feedforward(PyObject *__pyx_self, PyObject *__pyx_v_ftconf_py); /*proto*/
+static PyMethodDef __pyx_mdef_5pyznn_1feedforward = {"feedforward", (PyCFunction)__pyx_pw_5pyznn_1feedforward, METH_O, 0};
+static PyObject *__pyx_pw_5pyznn_1feedforward(PyObject *__pyx_self, PyObject *__pyx_v_ftconf_py) {
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
-  __Pyx_RefNannySetupContext("prepare_testing (wrapper)", 0);
-  __pyx_r = __pyx_pf_5pyznn_prepare_testing(__pyx_self, ((PyObject *)__pyx_v_path_py));
+  __Pyx_RefNannySetupContext("feedforward (wrapper)", 0);
+  __pyx_r = __pyx_pf_5pyznn_feedforward(__pyx_self, ((PyObject *)__pyx_v_ftconf_py));
 
   /* function exit code */
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5pyznn_prepare_testing(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_path_py) {
-  std::string __pyx_v_path_c;
+static PyObject *__pyx_pf_5pyznn_feedforward(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ftconf_py) {
+  std::string __pyx_v_ftconf_c;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   std::string __pyx_t_1;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
-  __Pyx_RefNannySetupContext("prepare_testing", 0);
+  __Pyx_RefNannySetupContext("feedforward", 0);
 
   /* "pyznn.pyx":14
  * 
- * def prepare_testing( path_py ):
- *     cdef string path_c = path_py             # <<<<<<<<<<<<<<
- *     prepare_test_c( path_c )
+ * def feedforward( ftconf_py ):
+ *     cdef string ftconf_c = ftconf_py             # <<<<<<<<<<<<<<
+ *     feedforward_c( ftconf_c )
  * 
  */
-  __pyx_t_1 = __pyx_convert_string_from_py_std__in_string(__pyx_v_path_py); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 14; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_v_path_c = __pyx_t_1;
+  __pyx_t_1 = __pyx_convert_string_from_py_std__in_string(__pyx_v_ftconf_py); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 14; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_ftconf_c = __pyx_t_1;
 
   /* "pyznn.pyx":15
- * def prepare_testing( path_py ):
- *     cdef string path_c = path_py
- *     prepare_test_c( path_c )             # <<<<<<<<<<<<<<
+ * def feedforward( ftconf_py ):
+ *     cdef string ftconf_c = ftconf_py
+ *     feedforward_c( ftconf_c )             # <<<<<<<<<<<<<<
  * 
- * def run_forward(np.ndarray[double, ndim=3, mode="c"] input  not None,\
+ * def train( ftconf_py ):
  */
-  prepare_test_c(__pyx_v_path_c);
+  feedforward_c(__pyx_v_ftconf_c);
 
   /* "pyznn.pyx":13
+ *     inline void train_c( string )
  * 
- * 
- * def prepare_testing( path_py ):             # <<<<<<<<<<<<<<
- *     cdef string path_c = path_py
- *     prepare_test_c( path_c )
+ * def feedforward( ftconf_py ):             # <<<<<<<<<<<<<<
+ *     cdef string ftconf_c = ftconf_py
+ *     feedforward_c( ftconf_c )
  */
 
   /* function exit code */
   __pyx_r = Py_None; __Pyx_INCREF(Py_None);
   goto __pyx_L0;
   __pyx_L1_error:;
-  __Pyx_AddTraceback("pyznn.prepare_testing", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __Pyx_AddTraceback("pyznn.feedforward", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XGIVEREF(__pyx_r);
@@ -1286,7 +1291,78 @@ static PyObject *__pyx_pf_5pyznn_prepare_testing(CYTHON_UNUSED PyObject *__pyx_s
 }
 
 /* "pyznn.pyx":17
- *     prepare_test_c( path_c )
+ *     feedforward_c( ftconf_c )
+ * 
+ * def train( ftconf_py ):             # <<<<<<<<<<<<<<
+ *     cdef string ftconf_c = ftconf_py
+ *     train_c( ftconf_c )
+ */
+
+/* Python wrapper */
+static PyObject *__pyx_pw_5pyznn_3train(PyObject *__pyx_self, PyObject *__pyx_v_ftconf_py); /*proto*/
+static PyMethodDef __pyx_mdef_5pyznn_3train = {"train", (PyCFunction)__pyx_pw_5pyznn_3train, METH_O, 0};
+static PyObject *__pyx_pw_5pyznn_3train(PyObject *__pyx_self, PyObject *__pyx_v_ftconf_py) {
+  PyObject *__pyx_r = 0;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("train (wrapper)", 0);
+  __pyx_r = __pyx_pf_5pyznn_2train(__pyx_self, ((PyObject *)__pyx_v_ftconf_py));
+
+  /* function exit code */
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+static PyObject *__pyx_pf_5pyznn_2train(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_ftconf_py) {
+  std::string __pyx_v_ftconf_c;
+  PyObject *__pyx_r = NULL;
+  __Pyx_RefNannyDeclarations
+  std::string __pyx_t_1;
+  int __pyx_lineno = 0;
+  const char *__pyx_filename = NULL;
+  int __pyx_clineno = 0;
+  __Pyx_RefNannySetupContext("train", 0);
+
+  /* "pyznn.pyx":18
+ * 
+ * def train( ftconf_py ):
+ *     cdef string ftconf_c = ftconf_py             # <<<<<<<<<<<<<<
+ *     train_c( ftconf_c )
+ * 
+ */
+  __pyx_t_1 = __pyx_convert_string_from_py_std__in_string(__pyx_v_ftconf_py); if (unlikely(PyErr_Occurred())) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 18; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_v_ftconf_c = __pyx_t_1;
+
+  /* "pyznn.pyx":19
+ * def train( ftconf_py ):
+ *     cdef string ftconf_c = ftconf_py
+ *     train_c( ftconf_c )             # <<<<<<<<<<<<<<
+ * 
+ * def run_forward(np.ndarray[double, ndim=3, mode="c"] input  not None,\
+ */
+  train_c(__pyx_v_ftconf_c);
+
+  /* "pyznn.pyx":17
+ *     feedforward_c( ftconf_c )
+ * 
+ * def train( ftconf_py ):             # <<<<<<<<<<<<<<
+ *     cdef string ftconf_c = ftconf_py
+ *     train_c( ftconf_c )
+ */
+
+  /* function exit code */
+  __pyx_r = Py_None; __Pyx_INCREF(Py_None);
+  goto __pyx_L0;
+  __pyx_L1_error:;
+  __Pyx_AddTraceback("pyznn.train", __pyx_clineno, __pyx_lineno, __pyx_filename);
+  __pyx_r = NULL;
+  __pyx_L0:;
+  __Pyx_XGIVEREF(__pyx_r);
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "pyznn.pyx":21
+ *     train_c( ftconf_c )
  * 
  * def run_forward(np.ndarray[double, ndim=3, mode="c"] input  not None,\             # <<<<<<<<<<<<<<
  *                 np.ndarray[double, ndim=3, mode="c"] output not None):
@@ -1294,10 +1370,10 @@ static PyObject *__pyx_pf_5pyznn_prepare_testing(CYTHON_UNUSED PyObject *__pyx_s
  */
 
 /* Python wrapper */
-static PyObject *__pyx_pw_5pyznn_3run_forward(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
-static char __pyx_doc_5pyznn_2run_forward[] = "\n    run the forward pass of znn\n    ";
-static PyMethodDef __pyx_mdef_5pyznn_3run_forward = {"run_forward", (PyCFunction)__pyx_pw_5pyznn_3run_forward, METH_VARARGS|METH_KEYWORDS, __pyx_doc_5pyznn_2run_forward};
-static PyObject *__pyx_pw_5pyznn_3run_forward(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
+static PyObject *__pyx_pw_5pyznn_5run_forward(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds); /*proto*/
+static char __pyx_doc_5pyznn_4run_forward[] = "\n    run the forward pass of znn\n    ";
+static PyMethodDef __pyx_mdef_5pyznn_5run_forward = {"run_forward", (PyCFunction)__pyx_pw_5pyznn_5run_forward, METH_VARARGS|METH_KEYWORDS, __pyx_doc_5pyznn_4run_forward};
+static PyObject *__pyx_pw_5pyznn_5run_forward(PyObject *__pyx_self, PyObject *__pyx_args, PyObject *__pyx_kwds) {
   PyArrayObject *__pyx_v_input = 0;
   PyArrayObject *__pyx_v_output = 0;
   int __pyx_lineno = 0;
@@ -1326,11 +1402,11 @@ static PyObject *__pyx_pw_5pyznn_3run_forward(PyObject *__pyx_self, PyObject *__
         case  1:
         if (likely((values[1] = PyDict_GetItem(__pyx_kwds, __pyx_n_s_output)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("run_forward", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+          __Pyx_RaiseArgtupleInvalid("run_forward", 1, 2, 2, 1); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "run_forward") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "run_forward") < 0)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -1343,15 +1419,15 @@ static PyObject *__pyx_pw_5pyznn_3run_forward(PyObject *__pyx_self, PyObject *__
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("run_forward", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
+  __Pyx_RaiseArgtupleInvalid("run_forward", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L3_error;}
   __pyx_L3_error:;
   __Pyx_AddTraceback("pyznn.run_forward", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_input), __pyx_ptype_5numpy_ndarray, 0, "input", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_output), __pyx_ptype_5numpy_ndarray, 0, "output", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 18; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_r = __pyx_pf_5pyznn_2run_forward(__pyx_self, __pyx_v_input, __pyx_v_output);
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_input), __pyx_ptype_5numpy_ndarray, 0, "input", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_output), __pyx_ptype_5numpy_ndarray, 0, "output", 0))) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 22; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_r = __pyx_pf_5pyznn_4run_forward(__pyx_self, __pyx_v_input, __pyx_v_output);
 
   /* function exit code */
   goto __pyx_L0;
@@ -1362,7 +1438,7 @@ static PyObject *__pyx_pw_5pyznn_3run_forward(PyObject *__pyx_self, PyObject *__
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_5pyznn_2run_forward(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_input, PyArrayObject *__pyx_v_output) {
+static PyObject *__pyx_pf_5pyznn_4run_forward(CYTHON_UNUSED PyObject *__pyx_self, PyArrayObject *__pyx_v_input, PyArrayObject *__pyx_v_output) {
   int __pyx_v_iz;
   int __pyx_v_iy;
   int __pyx_v_ix;
@@ -1396,16 +1472,16 @@ static PyObject *__pyx_pf_5pyznn_2run_forward(CYTHON_UNUSED PyObject *__pyx_self
   __pyx_pybuffernd_output.rcbuffer = &__pyx_pybuffer_output;
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_input.rcbuffer->pybuffer, (PyObject*)__pyx_v_input, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 3, 0, __pyx_stack) == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_input.rcbuffer->pybuffer, (PyObject*)__pyx_v_input, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 3, 0, __pyx_stack) == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __pyx_pybuffernd_input.diminfo[0].strides = __pyx_pybuffernd_input.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_input.diminfo[0].shape = __pyx_pybuffernd_input.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_input.diminfo[1].strides = __pyx_pybuffernd_input.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_input.diminfo[1].shape = __pyx_pybuffernd_input.rcbuffer->pybuffer.shape[1]; __pyx_pybuffernd_input.diminfo[2].strides = __pyx_pybuffernd_input.rcbuffer->pybuffer.strides[2]; __pyx_pybuffernd_input.diminfo[2].shape = __pyx_pybuffernd_input.rcbuffer->pybuffer.shape[2];
   {
     __Pyx_BufFmt_StackElem __pyx_stack[1];
-    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_output.rcbuffer->pybuffer, (PyObject*)__pyx_v_output, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 3, 0, __pyx_stack) == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    if (unlikely(__Pyx_GetBufferAndValidate(&__pyx_pybuffernd_output.rcbuffer->pybuffer, (PyObject*)__pyx_v_output, &__Pyx_TypeInfo_double, PyBUF_FORMAT| PyBUF_C_CONTIGUOUS, 3, 0, __pyx_stack) == -1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
   __pyx_pybuffernd_output.diminfo[0].strides = __pyx_pybuffernd_output.rcbuffer->pybuffer.strides[0]; __pyx_pybuffernd_output.diminfo[0].shape = __pyx_pybuffernd_output.rcbuffer->pybuffer.shape[0]; __pyx_pybuffernd_output.diminfo[1].strides = __pyx_pybuffernd_output.rcbuffer->pybuffer.strides[1]; __pyx_pybuffernd_output.diminfo[1].shape = __pyx_pybuffernd_output.rcbuffer->pybuffer.shape[1]; __pyx_pybuffernd_output.diminfo[2].strides = __pyx_pybuffernd_output.rcbuffer->pybuffer.strides[2]; __pyx_pybuffernd_output.diminfo[2].shape = __pyx_pybuffernd_output.rcbuffer->pybuffer.shape[2];
 
-  /* "pyznn.pyx":22
+  /* "pyznn.pyx":26
  *     run the forward pass of znn
  *     """
  *     cdef int iz = input.shape[0]             # <<<<<<<<<<<<<<
@@ -1414,7 +1490,7 @@ static PyObject *__pyx_pf_5pyznn_2run_forward(CYTHON_UNUSED PyObject *__pyx_self
  */
   __pyx_v_iz = (__pyx_v_input->dimensions[0]);
 
-  /* "pyznn.pyx":23
+  /* "pyznn.pyx":27
  *     """
  *     cdef int iz = input.shape[0]
  *     cdef int iy = input.shape[1]             # <<<<<<<<<<<<<<
@@ -1423,7 +1499,7 @@ static PyObject *__pyx_pf_5pyznn_2run_forward(CYTHON_UNUSED PyObject *__pyx_self
  */
   __pyx_v_iy = (__pyx_v_input->dimensions[1]);
 
-  /* "pyznn.pyx":24
+  /* "pyznn.pyx":28
  *     cdef int iz = input.shape[0]
  *     cdef int iy = input.shape[1]
  *     cdef int ix = input.shape[2]             # <<<<<<<<<<<<<<
@@ -1432,7 +1508,7 @@ static PyObject *__pyx_pf_5pyznn_2run_forward(CYTHON_UNUSED PyObject *__pyx_self
  */
   __pyx_v_ix = (__pyx_v_input->dimensions[2]);
 
-  /* "pyznn.pyx":25
+  /* "pyznn.pyx":29
  *     cdef int iy = input.shape[1]
  *     cdef int ix = input.shape[2]
  *     cdef int oz = output.shape[0]             # <<<<<<<<<<<<<<
@@ -1441,7 +1517,7 @@ static PyObject *__pyx_pf_5pyznn_2run_forward(CYTHON_UNUSED PyObject *__pyx_self
  */
   __pyx_v_oz = (__pyx_v_output->dimensions[0]);
 
-  /* "pyznn.pyx":26
+  /* "pyznn.pyx":30
  *     cdef int ix = input.shape[2]
  *     cdef int oz = output.shape[0]
  *     cdef int oy = output.shape[1]             # <<<<<<<<<<<<<<
@@ -1450,7 +1526,7 @@ static PyObject *__pyx_pf_5pyznn_2run_forward(CYTHON_UNUSED PyObject *__pyx_self
  */
   __pyx_v_oy = (__pyx_v_output->dimensions[1]);
 
-  /* "pyznn.pyx":27
+  /* "pyznn.pyx":31
  *     cdef int oz = output.shape[0]
  *     cdef int oy = output.shape[1]
  *     cdef int ox = output.shape[2]             # <<<<<<<<<<<<<<
@@ -1459,7 +1535,7 @@ static PyObject *__pyx_pf_5pyznn_2run_forward(CYTHON_UNUSED PyObject *__pyx_self
  */
   __pyx_v_ox = (__pyx_v_output->dimensions[2]);
 
-  /* "pyznn.pyx":29
+  /* "pyznn.pyx":33
  *     cdef int ox = output.shape[2]
  *     # cdef string config_fpath = "forward.config"
  *     pyznn_forward_c(  &input[0,0,0],  iz, iy, ix,             # <<<<<<<<<<<<<<
@@ -1483,10 +1559,10 @@ static PyObject *__pyx_pf_5pyznn_2run_forward(CYTHON_UNUSED PyObject *__pyx_self
   } else if (unlikely(__pyx_t_3 >= __pyx_pybuffernd_input.diminfo[2].shape)) __pyx_t_4 = 2;
   if (unlikely(__pyx_t_4 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_4);
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 33; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
 
-  /* "pyznn.pyx":30
+  /* "pyznn.pyx":34
  *     # cdef string config_fpath = "forward.config"
  *     pyznn_forward_c(  &input[0,0,0],  iz, iy, ix,
  *                     &output[0,0,0], oz, oy, ox )             # <<<<<<<<<<<<<<
@@ -1509,10 +1585,10 @@ static PyObject *__pyx_pf_5pyznn_2run_forward(CYTHON_UNUSED PyObject *__pyx_self
   } else if (unlikely(__pyx_t_7 >= __pyx_pybuffernd_output.diminfo[2].shape)) __pyx_t_4 = 2;
   if (unlikely(__pyx_t_4 != -1)) {
     __Pyx_RaiseBufferIndexError(__pyx_t_4);
-    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 30; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+    {__pyx_filename = __pyx_f[0]; __pyx_lineno = 34; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   }
 
-  /* "pyznn.pyx":29
+  /* "pyznn.pyx":33
  *     cdef int ox = output.shape[2]
  *     # cdef string config_fpath = "forward.config"
  *     pyznn_forward_c(  &input[0,0,0],  iz, iy, ix,             # <<<<<<<<<<<<<<
@@ -1520,8 +1596,8 @@ static PyObject *__pyx_pf_5pyznn_2run_forward(CYTHON_UNUSED PyObject *__pyx_self
  */
   pyznn_forward_c((&(*__Pyx_BufPtrCContig3d(double *, __pyx_pybuffernd_input.rcbuffer->pybuffer.buf, __pyx_t_1, __pyx_pybuffernd_input.diminfo[0].strides, __pyx_t_2, __pyx_pybuffernd_input.diminfo[1].strides, __pyx_t_3, __pyx_pybuffernd_input.diminfo[2].strides))), __pyx_v_iz, __pyx_v_iy, __pyx_v_ix, (&(*__Pyx_BufPtrCContig3d(double *, __pyx_pybuffernd_output.rcbuffer->pybuffer.buf, __pyx_t_5, __pyx_pybuffernd_output.diminfo[0].strides, __pyx_t_6, __pyx_pybuffernd_output.diminfo[1].strides, __pyx_t_7, __pyx_pybuffernd_output.diminfo[2].strides))), __pyx_v_oz, __pyx_v_oy, __pyx_v_ox);
 
-  /* "pyznn.pyx":17
- *     prepare_test_c( path_c )
+  /* "pyznn.pyx":21
+ *     train_c( ftconf_c )
  * 
  * def run_forward(np.ndarray[double, ndim=3, mode="c"] input  not None,\             # <<<<<<<<<<<<<<
  *                 np.ndarray[double, ndim=3, mode="c"] output not None):
@@ -3634,6 +3710,9 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_u_Non_native_byte_order_not_suppor, __pyx_k_Non_native_byte_order_not_suppor, sizeof(__pyx_k_Non_native_byte_order_not_suppor), 0, 1, 0, 0},
   {&__pyx_n_s_RuntimeError, __pyx_k_RuntimeError, sizeof(__pyx_k_RuntimeError), 0, 0, 1, 1},
   {&__pyx_n_s_ValueError, __pyx_k_ValueError, sizeof(__pyx_k_ValueError), 0, 0, 1, 1},
+  {&__pyx_n_s_feedforward, __pyx_k_feedforward, sizeof(__pyx_k_feedforward), 0, 0, 1, 1},
+  {&__pyx_n_s_ftconf_c, __pyx_k_ftconf_c, sizeof(__pyx_k_ftconf_c), 0, 0, 1, 1},
+  {&__pyx_n_s_ftconf_py, __pyx_k_ftconf_py, sizeof(__pyx_k_ftconf_py), 0, 0, 1, 1},
   {&__pyx_n_s_import, __pyx_k_import, sizeof(__pyx_k_import), 0, 0, 1, 1},
   {&__pyx_n_s_input, __pyx_k_input, sizeof(__pyx_k_input), 0, 0, 1, 1},
   {&__pyx_n_s_ix, __pyx_k_ix, sizeof(__pyx_k_ix), 0, 0, 1, 1},
@@ -3648,13 +3727,11 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_ox, __pyx_k_ox, sizeof(__pyx_k_ox), 0, 0, 1, 1},
   {&__pyx_n_s_oy, __pyx_k_oy, sizeof(__pyx_k_oy), 0, 0, 1, 1},
   {&__pyx_n_s_oz, __pyx_k_oz, sizeof(__pyx_k_oz), 0, 0, 1, 1},
-  {&__pyx_n_s_path_c, __pyx_k_path_c, sizeof(__pyx_k_path_c), 0, 0, 1, 1},
-  {&__pyx_n_s_path_py, __pyx_k_path_py, sizeof(__pyx_k_path_py), 0, 0, 1, 1},
-  {&__pyx_n_s_prepare_testing, __pyx_k_prepare_testing, sizeof(__pyx_k_prepare_testing), 0, 0, 1, 1},
   {&__pyx_n_s_pyznn, __pyx_k_pyznn, sizeof(__pyx_k_pyznn), 0, 0, 1, 1},
   {&__pyx_n_s_range, __pyx_k_range, sizeof(__pyx_k_range), 0, 0, 1, 1},
   {&__pyx_n_s_run_forward, __pyx_k_run_forward, sizeof(__pyx_k_run_forward), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
+  {&__pyx_n_s_train, __pyx_k_train, sizeof(__pyx_k_train), 0, 0, 1, 1},
   {&__pyx_kp_u_unknown_dtype_code_in_numpy_pxd, __pyx_k_unknown_dtype_code_in_numpy_pxd, sizeof(__pyx_k_unknown_dtype_code_in_numpy_pxd), 0, 1, 0, 0},
   {&__pyx_kp_s_usr_people_jingpeng_seungmount, __pyx_k_usr_people_jingpeng_seungmount, sizeof(__pyx_k_usr_people_jingpeng_seungmount), 0, 0, 1, 0},
   {0, 0, 0, 0, 0, 0, 0}
@@ -3739,28 +3816,40 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__6);
 
   /* "pyznn.pyx":13
+ *     inline void train_c( string )
  * 
- * 
- * def prepare_testing( path_py ):             # <<<<<<<<<<<<<<
- *     cdef string path_c = path_py
- *     prepare_test_c( path_c )
+ * def feedforward( ftconf_py ):             # <<<<<<<<<<<<<<
+ *     cdef string ftconf_c = ftconf_py
+ *     feedforward_c( ftconf_c )
  */
-  __pyx_tuple__7 = PyTuple_Pack(2, __pyx_n_s_path_py, __pyx_n_s_path_c); if (unlikely(!__pyx_tuple__7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 13; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__7 = PyTuple_Pack(2, __pyx_n_s_ftconf_py, __pyx_n_s_ftconf_c); if (unlikely(!__pyx_tuple__7)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 13; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_tuple__7);
   __Pyx_GIVEREF(__pyx_tuple__7);
-  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_usr_people_jingpeng_seungmount, __pyx_n_s_prepare_testing, 13, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 13; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_codeobj__8 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__7, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_usr_people_jingpeng_seungmount, __pyx_n_s_feedforward, 13, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__8)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 13; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
 
   /* "pyznn.pyx":17
- *     prepare_test_c( path_c )
+ *     feedforward_c( ftconf_c )
+ * 
+ * def train( ftconf_py ):             # <<<<<<<<<<<<<<
+ *     cdef string ftconf_c = ftconf_py
+ *     train_c( ftconf_c )
+ */
+  __pyx_tuple__9 = PyTuple_Pack(2, __pyx_n_s_ftconf_py, __pyx_n_s_ftconf_c); if (unlikely(!__pyx_tuple__9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__9);
+  __Pyx_GIVEREF(__pyx_tuple__9);
+  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(1, 0, 2, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__9, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_usr_people_jingpeng_seungmount, __pyx_n_s_train, 17, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+
+  /* "pyznn.pyx":21
+ *     train_c( ftconf_c )
  * 
  * def run_forward(np.ndarray[double, ndim=3, mode="c"] input  not None,\             # <<<<<<<<<<<<<<
  *                 np.ndarray[double, ndim=3, mode="c"] output not None):
  *     """
  */
-  __pyx_tuple__9 = PyTuple_Pack(8, __pyx_n_s_input, __pyx_n_s_output, __pyx_n_s_iz, __pyx_n_s_iy, __pyx_n_s_ix, __pyx_n_s_oz, __pyx_n_s_oy, __pyx_n_s_ox); if (unlikely(!__pyx_tuple__9)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __Pyx_GOTREF(__pyx_tuple__9);
-  __Pyx_GIVEREF(__pyx_tuple__9);
-  __pyx_codeobj__10 = (PyObject*)__Pyx_PyCode_New(2, 0, 8, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__9, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_usr_people_jingpeng_seungmount, __pyx_n_s_run_forward, 17, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__10)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_tuple__11 = PyTuple_Pack(8, __pyx_n_s_input, __pyx_n_s_output, __pyx_n_s_iz, __pyx_n_s_iy, __pyx_n_s_ix, __pyx_n_s_oz, __pyx_n_s_oy, __pyx_n_s_ox); if (unlikely(!__pyx_tuple__11)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_tuple__11);
+  __Pyx_GIVEREF(__pyx_tuple__11);
+  __pyx_codeobj__12 = (PyObject*)__Pyx_PyCode_New(2, 0, 8, 0, 0, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__11, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_usr_people_jingpeng_seungmount, __pyx_n_s_run_forward, 21, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__12)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -3883,27 +3972,39 @@ PyMODINIT_FUNC PyInit_pyznn(void)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "pyznn.pyx":13
+ *     inline void train_c( string )
  * 
- * 
- * def prepare_testing( path_py ):             # <<<<<<<<<<<<<<
- *     cdef string path_c = path_py
- *     prepare_test_c( path_c )
+ * def feedforward( ftconf_py ):             # <<<<<<<<<<<<<<
+ *     cdef string ftconf_c = ftconf_py
+ *     feedforward_c( ftconf_c )
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5pyznn_1prepare_testing, NULL, __pyx_n_s_pyznn); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 13; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5pyznn_1feedforward, NULL, __pyx_n_s_pyznn); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 13; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_prepare_testing, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 13; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_feedforward, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 13; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "pyznn.pyx":17
- *     prepare_test_c( path_c )
+ *     feedforward_c( ftconf_c )
+ * 
+ * def train( ftconf_py ):             # <<<<<<<<<<<<<<
+ *     cdef string ftconf_c = ftconf_py
+ *     train_c( ftconf_c )
+ */
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5pyznn_3train, NULL, __pyx_n_s_pyznn); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_train, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "pyznn.pyx":21
+ *     train_c( ftconf_c )
  * 
  * def run_forward(np.ndarray[double, ndim=3, mode="c"] input  not None,\             # <<<<<<<<<<<<<<
  *                 np.ndarray[double, ndim=3, mode="c"] output not None):
  *     """
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5pyznn_3run_forward, NULL, __pyx_n_s_pyznn); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_5pyznn_5run_forward, NULL, __pyx_n_s_pyznn); if (unlikely(!__pyx_t_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_run_forward, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 17; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_run_forward, __pyx_t_1) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 21; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "pyznn.pyx":1

@@ -11,12 +11,14 @@ import scipy as sp
 
 #%% parameters
 # directories
-Dir = '../experiments/VeryDeep2_w109/network_overfitting/'
-Dir = '../experiments/VGG_L7/network/'
-#Dir = '../experiments/N4/network_10nm/'
-#Dir = '../experiments/VeryDeep2HR_w65x9/network/'
+#Dir = '../experiments/VeryDeep2_w109/network_overfitting/'
+Dir = '../experiments/VGG_L7_2R/network/'
+Dir = '../experiments/VGG_L10/network/'
+#Dir = '../experiments/N4/network/'
+Dir = '../experiments/VeryDeep2HR_w65x9/network2/'
 #Dir = '../experiments/VeryDeep2_S1/network/'
-#Dir = '../experiments/N3/network/'
+#Dir = '../experiments/N4/network/'
+#Dir = '../experiments/N4_2R/network/'
 
 # parameters to smooth curve
 smooth_flag = True
@@ -96,7 +98,7 @@ fig_err.plot(train_iter, train_err,'-k', test_iter, test_err, '-r')
 fig_err.set_title('cost')
 fig_err.set_ylabel('cross entropy')
 fig_err.set_xlabel('iterartion')
-fig_err.set_ylim([0, max(train_err.max(), train_cls.max())])
+#fig_err.set_ylim([0, max(train_err.max(), train_cls.max())])
 fig_err.legend(('train', 'test'), loc=0)
 
 fig_cls = fig.add_subplot(122)
@@ -104,9 +106,7 @@ fig_cls.plot(train_iter, train_cls,'-k', test_iter, test_cls, '-r')
 fig_cls.set_title('classification error')
 fig_cls.set_ylabel('classification error')
 fig_cls.set_xlabel('iteration')
-fig_cls.set_ylim([0, max(train_err.max(), train_cls.max())])
+#fig_cls.set_ylim([0, max(train_err.max(), train_cls.max())])
 fig_cls.legend(('train', 'test'), loc=0)
 fig.show()
-
-import time
-time.sleep(10)
+#plt.show()

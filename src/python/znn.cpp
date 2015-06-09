@@ -5,20 +5,44 @@
 
 using namespace zi::znn;
 
-inline void prepare_test_c(string ftconf)
+inline void feedforward_c(std::string ftconf)
 {
     // options, create fake main function parameters
-    // std::string path = "forward.config";
     options_ptr op = options_ptr(new options( ftconf ));
-    op->save();
+    // op->save();
     // create network
     network net(op);
     net.prepare_testing();
+
+    net.forward_scan();
+}
+
+inline void train_c(std::string ftconf)
+{
+    // options, create fake main function parameters
+    std::cout<<"start reading option config file..."<<std::endl;
+    options_ptr op = options_ptr(new options( ftconf ));
+    // op->save();
+    // create network
+    std::cout<<"construct the network..."<<std::endl;
+    network net(op);
+    net.prepare_testing();
+
+    std::cout<<"start training..."<<std::endl;
+    net.train();
 }
 
 inline void pyznn_forward_c(    double* input_py,  unsigned int iz, unsigned int iy, unsigned int ix,
                                 double* output_py, unsigned int oz, unsigned int oy, unsigned int ox)
 {
+    // options, create fake main function parameters
+    std::string ftconf = "forward.config";
+    options_ptr op = options_ptr(new options( ftconf ));
+    op->save();
+    // create network
+    network net(op);
+    net.prepare_testing();
+
     // initialization
     double3d_ptr pinput = volume_pool.get_double3d(ix,iy,iz);
     double3d& input = *pinput;

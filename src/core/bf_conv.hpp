@@ -285,7 +285,7 @@ inline double3d_ptr bf_conv_sparse_naive(const double3d_ptr& ap,
             for ( std::size_t z = 0; z < rz; ++z )
             {
                 r[x][y][z] = 0;
-             
+
                 for ( std::size_t dx = x, wx = bx-1; dx < bx + x; dx += s[0], wx -= s[0] )
                     for ( std::size_t dy = y, wy = by-1; dy < by + y; dy += s[1], wy -= s[1] )
                         for ( std::size_t dz = z, wz = bz-1; dz < bz + z; dz += s[2], wz -= s[2] )
