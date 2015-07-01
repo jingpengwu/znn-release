@@ -56,6 +56,5 @@ init_type=Uniform
 init_params=0.05
 
 [OUTPUT]
-size=2
-activation=linear
-act_params=1,0
+size=3
+activation=logistic
