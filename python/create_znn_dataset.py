@@ -8,16 +8,28 @@ import numpy as np
 
 #%% parameters
 Dir = '../dataset/fish/'
-fnm_trn = Dir + 'data/original/Merlin_raw1.tif'
-fnm_lbl = Dir + 'data/original/Merlin_label1.tif'
+fnm_trn = Dir + 'data/original/Merlin_raw2.tif'
+fnm_lbl = Dir + 'data/original/Merlin_label_24bit.tif'
 
 # the batch id
-batch_id = 3
+batch_id = 91
 
 #%% read volume
 import emirt.io
-vlm_trn = emirt.io.imread( fnm_trn ).transpose(0,2,1)
-vlm_lbl = emirt.io.imread( fnm_lbl ).transpose(0,2,1)
+vlm_trn = emirt.io.imread( fnm_trn )
+vlm_lbl_24bit = emirt.io.imread( fnm_lbl ).astype('double')
+
+# special code for Merlin!!!
+#vlm_lbl_24bit = vlm_lbl_24bit[102:,:,:,:]
+
+# transfer to 32bit
+vlm_lbl =   vlm_lbl_24bit[:,:,:,0]*256*256 + \
+            vlm_lbl_24bit[:,:,:,1]*256 + \
+            vlm_lbl_24bit[:,:,:,2]
+
+# adjust axis
+vlm_trn = vlm_trn.transpose(0,2,1)
+vlm_lbl = vlm_lbl.transpose(0,2,1)
 sz = np.asarray( vlm_trn.shape )
 #%% save as znn format
 emirt.io.znn_img_save(vlm_trn.astype('double'), Dir+'data/batch{}'.format(batch_id)+".image")
@@ -44,16 +56,16 @@ ppargs=2""".format(batch_id, sz[2], sz[1], sz[0]) )
 f.close()
 
 #%%
-#import emirt.show
-#cmp = emirt.show.CompareVol(vlm_lbl, vlm_trn)
-#cmp.vol_compare_slice()
+import emirt.show
+cmp = emirt.show.CompareVol(vlm_lbl, vlm_trn)
+cmp.vol_compare_slice()
 
 #%% compare two binary files
-vm = emirt.io.znn_img_read(Dir+'data/00_backup/batch1.label')
-sz = np.fromfile(Dir+'data/batch1.size', dtype='uint32')
-vp = emirt.io.znn_img_read(Dir+'data/batch1.label')
-print "matlab==python? {}".format( np.all( vm==vp ) )
-
-szm = np.fromfile(Dir+'data/00_backup/batch1.size', dtype='uint32')
-szp = np.fromfile(Dir+'data/batch1.size', dtype='uint32')
-print "matlab==python? {}".format( np.all( szm==szp ) )
+#vm = emirt.io.znn_img_read(Dir+'data/00_backup/batch1.label')
+#sz = np.fromfile(Dir+'data/batch1.size', dtype='uint32')
+#vp = emirt.io.znn_img_read(Dir+'data/batch1.label')
+#print "matlab==python? {}".format( np.all( vm==vp ) )
+#
+#szm = np.fromfile(Dir+'data/00_backup/batch1.size', dtype='uint32')
+#szp = np.fromfile(Dir+'data/batch1.size', dtype='uint32')
+#print "matlab==python? {}".format( np.all( szm==szp ) )

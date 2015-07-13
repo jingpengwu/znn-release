@@ -8,22 +8,48 @@ Created on Tue Dec 16 09:52:48 2014
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy as sp
+import os
 
 #%% parameters
 # directories
-#Dir = '../experiments/VeryDeep2_w109/network_overfitting/'
-Dir = '../experiments/VGG_L7_2R/network/'
-Dir = '../experiments/VGG_L10/network/'
+Dir = '../experiments/VeryDeep2_w109/network_overfitting/'
+#Dir = '../experiments/VGG_L7_3/network/'
+#Dir = '../experiments/VGG_L10/network/'
+# Dir = '../experiments/VGG_L8_3R/network.a/'
 #Dir = '../experiments/N4/network/'
-Dir = '../experiments/VeryDeep2HR_w65x9/network2/'
+Dir = '../experiments/VeryDeep2HR_w65x9_bak/network/'
+# Dir = '../experiments/VeryDeep2HR_w65x9_malis/network/'
 #Dir = '../experiments/VeryDeep2_S1/network/'
 #Dir = '../experiments/N4/network/'
 #Dir = '../experiments/N4_2R/network/'
+#Dir = '../experiments/W2_L8_3/network/'
+#Dir = '../experiments/W3_C10_P2_D2/network/'
+# Dir = '../experiments/W4_C13_P3_D3/network/'
+Dir = '../experiments/W5_C10_P3_D2/network2/'
+#Dir = '../experiments/W6_C13_P3_D3/network/'
+#Dir = '../experiments/W7_C11_P3_D3/network/'
+#Dir = '../experiments/W9_C8_P3_D3/network/'
+#Dir = '../experiments/W59_C10_P3_D3/network/'
+#Dir = '../experiments/W12_C5_P3_D3/network/'
+#Dir = '../experiments/W10_C10_P3_D3/network/'
+#Dir = '../experiments/W14_C8_P3_D3/network/'
+
+# AWS training, fist: cluster name, second: path
+Dir = ("jingpeng1", "/home/znn-release/experiments/W10_C10_P3_D3/network/")
+#Dir = ("jingpeng2", "/home/znn-release/experiments/VeryDeep2HR_w65x9/network/")
+#Dir = ("jingpeng3", "/home/znn-release/experiments/W14_C8_P3_D3/network/")
 
 # parameters to smooth curve
 smooth_flag = True
 Window_size = 25    # must be a odd number
 Polynomial_order = 3
+
+#%% process directory of AWS training
+if isinstance(Dir, tuple):
+    # download the train and test info
+    os.system("starcluster get "+ Dir[0] + " "+Dir[1]+"t* /tmp/")
+    Dir = "/tmp/"
+
 
 #%% smooth function
 def savitzky_golay(y, window_size, order, deriv=0, rate=1):
@@ -109,4 +135,4 @@ fig_cls.set_xlabel('iteration')
 #fig_cls.set_ylim([0, max(train_err.max(), train_cls.max())])
 fig_cls.legend(('train', 'test'), loc=0)
 fig.show()
-#plt.show()
+plt.show()
