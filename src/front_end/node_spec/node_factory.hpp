@@ -76,6 +76,10 @@ public:
 
 		// set filtering - set stride later		
 		set_filter(ret,spec->filter,spec->filter_size);
+
+		// dropout
+		ret->set_dropout(spec->dropout);
+		ret->set_dropout_rate(spec->p);		
 			
 		return ret;
 	}
@@ -111,7 +115,11 @@ private:
 		zi::zargs_::parser<std::vector<double> > arg_parser;
 		bool parsed = arg_parser.parse(&args,params);
 
-		if ( type == "logistic" )
+		if ( type.empty() )
+		{
+			ret.reset();
+		}
+		else if ( type == "logistic" )
 		{
 			ret = error_fn_ptr(new logistic_error_fn);
 		}

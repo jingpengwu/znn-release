@@ -47,9 +47,9 @@ namespace znn {
 
 class network
 {
-private:
+private:    
     net_ptr net_;
-
+    
     zi::task_manager::prioritized tm_;
 
     std::size_t lastn_;
@@ -60,12 +60,12 @@ private:
     // forward scanner
     std::map<int,forward_scanner_ptr> scanners_;
 
-    // option parser
-    options_ptr op;
+    // option parser    
+    options_ptr op;    
 
     // iteration number
     std::size_t n_iter_;
-
+    
     // cost function
     cost_fn_ptr cost_fn_;
 
@@ -78,11 +78,12 @@ private:
 
 
 private:
-    void load_inputs( const std::string& fname, batch_list batches )
+    void load_inputs()
     {
+	batch_list batches = op->get_batch_range();
         FOR_EACH( it, batches )
         {
-            load_input(fname, *it);
+            load_input(*it);
         }
 
         if ( inputs_.empty() )
@@ -92,16 +93,30 @@ private:
         }
     }
 
-    void load_input( const std::string& fname, int n )
+    void load_input( int n )
     {
         // data spec
-        std::ostringstream ssbatch;
-        ssbatch << fname << n << ".spec";
+        std::string batch_name = op->data_path;
+        std::size_t batch_num  = 0;
+
+        if ( op->batch_template )
+        {
+            batch_num = n;
+        }
+        else
+        {
+            batch_name += boost::lexical_cast<std::string>(n);
+        }
+
+        batch_name += ".spec";
+
+        // data spec parser        
+        data_spec_parser parser(batch_name,batch_num);
 
         // loading
         std::cout << "[network] load_input" << std::endl;
-        std::cout << "Loading [" << ssbatch.str() << "]" << std::endl;
-
+        std::cout << "Loading [" << batch_name << "]" << std::endl;
+        
         // inputs
         std::vector<vec3i> in_szs = net_->input_sizes();
         std::cout << "Input sizes:  ";
@@ -123,20 +138,20 @@ private:
         if ( op->dp_type == "volume" )
         {
             volume_data_provider* dp =
-                new volume_data_provider(ssbatch.str(),in_szs,out_szs);
-
+                new volume_data_provider(parser,in_szs,out_szs,op->mirroring);
+            
             dp->data_augmentation(op->data_aug);
-
+            
             inputs_[n] = data_provider_ptr(dp);
         }
         else if ( op->dp_type == "affinity" )
         {
             affinity_data_provider* dp =
-                new affinity_data_provider(ssbatch.str(),in_szs,out_szs);
-
+                new affinity_data_provider(parser,in_szs,out_szs,op->mirroring);
+            
             dp->data_augmentation(op->data_aug);
-
-            inputs_[n] = data_provider_ptr(dp);
+            
+            inputs_[n] = data_provider_ptr(dp);   
         }
         else
         {
@@ -146,12 +161,12 @@ private:
     }
 
     void load_test_inputs()
-    {
+    {        
         FOR_EACH( it, op->test_range )
         {
             int n = *it;
             std::cout << "batch" << n << std::endl;
-            load_test_input(n);
+            load_test_input(n);            
             std::cout << "batch" << n << " loaded." << std::endl;
         }
 
@@ -165,9 +180,23 @@ private:
     void load_test_input( int n )
     {
         // data spec
-        std::ostringstream ssbatch;
-        ssbatch << op->data_path << n << ".spec";
+        std::string batch_name = op->data_path;
+        std::size_t batch_num  = 0;
 
+        if ( op->batch_template )
+        {
+            batch_num = n;
+        }
+        else
+        {
+            batch_name += boost::lexical_cast<std::string>(n);
+        }
+        
+        batch_name += ".spec";
+
+        // data spec parser        
+        data_spec_parser parser(batch_name,batch_num);
+        
         // inputs
         std::vector<vec3i> in_szs = net_->input_sizes();
         std::cout << "Input sizes: ";
@@ -185,21 +214,25 @@ private:
              std::cout << (*it) << " ";
         }
         std::cout << std::endl;
-
+        
         if ( op->scanner == "volume" )
         {
-            scanners_[n] = forward_scanner_ptr(new
-                volume_forward_scanner(ssbatch.str(),
+            scanners_[n] = forward_scanner_ptr(new 
+                volume_forward_scanner(parser,
                                        in_szs,out_szs,
                                        op->scan_offset,
-                                       op->subvol_dim));
+                                       op->subvol_dim,
+                                       op->mirroring));
+
+            if ( op->scan_fmaps )
+                scanners_[n]->set_feature_map_scanner(net_,op->scan_all);
         }
         else
         {
             std::string what = "Unknown forward scanner type [" + op->scanner + "]";
             throw std::invalid_argument(what);
         }
-    }
+    }    
 
 
 // input sampling
@@ -225,7 +258,7 @@ private:
             if ( !scanning )
             {
                 // backward pass
-                run_backward(s->labels, s->masks);
+                run_backward(s);
             }
         }
 
@@ -236,13 +269,24 @@ private:
     {
         net_->force_fft(b);
     }
-
+    
     // enable the optimization for scanning
-    void optimize_for_training( bool scanning = false )
+    void optimize_for_training(bool scanning = false)
     {
+        // [kisuklee] temporary
+        #define FILE_AND_CONSOLE( ofs, oss )        \
+            {                                       \
+                      ofs << oss.str() << "\n";     \
+                std::cout << oss.str() << "\n";     \
+                oss.clear(); oss.str("");           \
+            }
+
+        std::string fname = op->save_path + "optimization.profile";
+        std::ofstream fout(fname.c_str(), std::ios::out);
+
         // force fft
         force_fft(true);
-
+        
         // warming up
         sample_ptr sample;
         if ( scanning )
@@ -253,63 +297,78 @@ private:
         {
             sample = random_sample(op->test_range);
         }
-        std::cout << "Warmup ffts (make fftplans): "
-                  << run_n_times(1, sample, scanning) << std::endl;
+
+        std::ostringstream line;
+        line << "Warmup ffts (make fftplans): " 
+             << run_n_times(1, sample, scanning);
+        FILE_AND_CONSOLE( fout, line );
 
         double approx = run_n_times(1, sample, scanning);
-        std::size_t run_times = static_cast<std::size_t>(static_cast<double>(5)/approx);
+        std::size_t run_times = 
+            static_cast<std::size_t>(static_cast<double>(5)/approx);
         if ( run_times < 2 )
         {
             run_times = 2;
         }
-        std::cout << "Will run " << run_times << " iterations per test." << std::endl;
+
+        line << "Will run " << run_times << " iterations per test.";
+        FILE_AND_CONSOLE( fout, line );
 
         double best = run_n_times(run_times, sample, scanning);
-        std::cout << "Best so far (all ffts): " << best << std::endl;
-
+        line << "Best so far (all ffts): " << best;
+        FILE_AND_CONSOLE( fout, line );        
+        
         // temporary solution for layer-wise fft opimization
         // should be refactored
         FOR_EACH( it, net_->node_groups_ )
         {
+            if ( (*it)->is_crop() ) continue;
+
             if ( (*it)->count_in_connections() > 0 )
             {
-                std::cout << "Testing node_group [" << (*it)->name() << "] ..." << std::endl;
-                (*it)->receives_fft(false);
+                line << "Testing node_group [" << (*it)->name() << "] ...";
+                FILE_AND_CONSOLE( fout, line );
 
+                (*it)->receives_fft(false);
+                
                 double t = run_n_times(run_times, sample, scanning);
-                std::cout << "   when using ffts   : " << best << "\n"
-                          << "   when using bf_conv: " << t;
+                line << "   when using ffts   : " << best << "\n"
+                     << "   when using bf_conv: " << t;                
 
                 if ( t < best )
                 {
                     best = t;
-                    std::cout << "   will use bf_conv" << std::endl;
+                    line << "   will use bf_conv";                    
                 }
                 else
                 {
-                    std::cout << "   will use ffts" << std::endl;
+                    line << "   will use ffts";                    
                     (*it)->receives_fft(true);
                 }
-            }
+                FILE_AND_CONSOLE( fout, line );
+            }   
         }
 
-        std::cout << "Optimization done." << std::endl;
+        line << "Optimization done.";
+        FILE_AND_CONSOLE( fout, line );
+
+        fout.close();
     }
 
 
 // training parameters
-private:
+private:    
     void force_eta( double eta )
     {
         std::cout << "Force learning rate parameter to be " << eta << std::endl;
-
+        
         net_->set_learning_rate(eta);
     }
 
     void set_momentum( double mom )
     {
         std::cout << "Momentum: " << mom << std::endl;
-
+        
         if ( mom > static_cast<double>(0) )
         {
             net_->set_momentum(mom);
@@ -319,7 +378,7 @@ private:
     void set_weight_decay( double wc )
     {
         std::cout << "Weight decay: " << wc << std::endl;
-
+        
         net_->set_weight_decay(wc);
     }
 
@@ -344,7 +403,7 @@ public:
 
         // weight decay setting
         set_weight_decay(op->wc_factor);
-
+        
         // This must precede the setup_fft() routine
         // set minibatch size
         if ( op->minibatch )
@@ -354,6 +413,22 @@ public:
 
         // optimize for training (fft vs non fft)
         setup_fft();
+
+        // time-stamped network weight
+        if ( op->weight_idx > 0 )
+        {
+            boost::filesystem::path hist_dir(op->hist_path);
+            boost::filesystem::path load_dir(op->load_path);
+
+            net_->reload_weight(op->weight_idx-1);
+            if ( !op->hist_path.empty() )
+            {
+                net_->save(op->hist_path);
+            }
+
+            // train information
+            export_train_information();
+        }
     }
 
     void set_minibatch_size( vec3i sz )
@@ -362,7 +437,7 @@ public:
     }
 
     void set_minibatch_size( double B )
-    {
+    {        
         net_->set_minibatch_size(B);
     }
 
@@ -378,13 +453,13 @@ public:
             {
                 optimize_for_training();
 
-                // Since optimization screws up the weights,
+                // Since optimization screws up the weights, 
                 // re-initializes the weights again.
                 net_->initialize_weight();
                 net_->initialize_momentum();
                 net_->save(op->save_path);
             }
-        }
+        }        
     }
 
 
@@ -395,8 +470,8 @@ public:
         net_->save(op->save_path);
 
         // load data batches for training
-        load_inputs(op->data_path,op->get_batch_range());
-
+        load_inputs();
+        
         // learning rate, momentum, weight decay, fft ...
         prepare_training();
 
@@ -409,19 +484,20 @@ public:
 
             // forward pass
             std::list<double3d_ptr> v = run_forward(s->inputs);
-
+           
             // update training monitor
             train_monitor_->update(v, s->labels, s->masks, op->cls_thresh);
 
             // backward pass
-            run_backward(s->labels,s->masks);
+            run_backward(s);
 
             // updates/sec
             if ( n_iter_ % op->check_freq == 0 )
             {
-                std::cout << "[Iter: " << std::setw(count_digit(op->n_iters))
-                            << n_iter_ << "] ";
-                std::cout << (wt.elapsed<double>()/tick) << " secs/update\t";
+                double speed = wt.elapsed<double>()/tick;
+                std::cout << "[Iter: " << std::setw(count_digit(op->n_iters)) 
+                          << n_iter_ << "] " << speed << " secs/update\t";
+                train_monitor_->push_speed(speed);
             }
 
             // check error
@@ -439,7 +515,7 @@ public:
             // test
             if ( n_iter_ % op->test_freq == 0 )
             {
-                test_check();
+                test_check();                
                 net_->save(op->save_path,true);
                 wt.restart();
                 tick = 0;
@@ -453,9 +529,15 @@ public:
             }
         }
     }
-
+   
     void forward_scan()
     {
+        if ( op->time_series != vec3i::zero )
+        {
+            time_series_scan();
+            return;
+        }
+
         // load inputs for forward scanning
         load_test_inputs();
 
@@ -490,9 +572,25 @@ public:
                           << " secs" << std::endl;
             }
 
+            // output file name
             std::ostringstream batch;
-            batch << op->save_path << op->outname << idx << op->subname;
-            scanner->save(batch.str());
+            batch << op->outname << idx << op->subname;
+
+            // save feature maps
+            if ( op->scan_fmaps )
+            {
+                const std::string& fmaps_path = op->save_path + "fmaps/";
+                boost::filesystem::path fmaps_dir(fmaps_path);
+                if ( !boost::filesystem::exists(fmaps_dir) )
+                {
+                    boost::filesystem::create_directory(fmaps_dir);
+                }
+                scanner->save_feature_maps(fmaps_path + batch.str() + ".",op->scan_all);
+            }
+            else // save output
+            {
+                scanner->save(op->save_path + batch.str());
+            }
         }
     }
 
@@ -501,6 +599,9 @@ public:
         if( op->test_range.empty() )
             return;
 
+        // dropout
+        net_->set_inference(true);
+
         // test loop
         for ( std::size_t i = 1; i <= op->test_samples; ++i )
         {
@@ -508,10 +609,13 @@ public:
 
             // forward pass
             std::list<double3d_ptr> v = run_forward(s->inputs);
-
+            
             // error computation
             test_monitor_->update(v, s->labels, s->masks);
         }
+
+        // dropout
+        net_->set_inference(false);
 
         std::cout << "<<<<<<<<<<<<< TEST >>>>>>>>>>>>>" << std::endl;
         test_monitor_->check(op->save_path, n_iter_);
@@ -519,7 +623,7 @@ public:
     }
 
 
-public:
+private:
     void prepare_testing()
     {
         // optimize for training (fft vs non fft)
@@ -531,6 +635,9 @@ public:
             net_->force_load();
         }
 
+        // DropOut
+        net_->set_inference(true);
+
         // time-stamped network weight
         if ( op->weight_idx > 0 )
         {
@@ -539,33 +646,80 @@ public:
             STRONG_ASSERT(!boost::filesystem::equivalent(hist_dir,load_dir));
 
             net_->reload_weight(op->weight_idx-1);
-            net_->save(op->hist_path);
+            if ( !op->hist_path.empty() )
+            {
+                net_->save(op->hist_path);    
+            }
 
             // train information
             export_train_information();
         }
     }
-private:
+
     void export_train_information()
     {
         STRONG_ASSERT(op->test_freq * op->check_freq > 0);
-
+                
         std::size_t test_idx  = op->weight_idx;
         std::size_t train_idx = op->weight_idx * op->test_freq / op->check_freq;
 
         std::cout << "train index: " << train_idx << std::endl;
         train_monitor_->load_state(op->load_path,train_idx);
         train_monitor_->save_state(op->hist_path);
-
+        
         std::cout << "test  index: " << test_idx << std::endl;
         test_monitor_->load_state(op->load_path,test_idx);
         test_monitor_->save_state(op->hist_path);
     }
 
+    void time_series_scan()
+    {
+        load_test_inputs();
+        
+        setup_fft();
+        
+        if ( op->force_load )
+        {
+            net_->force_load();
+        }
+
+        std::size_t head    = op->time_series[0];
+        std::size_t step    = op->time_series[1];
+        std::size_t tail    = op->time_series[2];
+        std::size_t counter = 1;
+        for ( std::size_t i = head; i <= tail; i += step, ++counter )
+        {
+            std::cout << "\n[Time series index = " << i << "] ";
+
+            // reload time-stamped network weight
+            net_->reload_weight(i-1);
+
+            // forward scanning
+            FOR_EACH( it, op->test_range )
+            {
+                int idx = *it;
+                forward_scanner_ptr scanner = scanners_[idx];
+
+                std::list<double3d_ptr> inputs;
+                std::list<double3d_ptr> outputs;
+
+                while ( scanner->pull(inputs) )
+                {
+                    outputs = run_forward(inputs);
+                    scanner->push(outputs);
+                }
+                
+                std::ostringstream batch;
+                batch << op->save_path << op->outname << idx << op->subname;
+                scanner->save(batch.str(),counter);
+            }            
+        }
+    }
+
 
 public:
     network( options_ptr _op )
-        : net_(new net)
+        : net_(new net)        
         , tm_(_op->n_threads)
         , lastn_(0)
         , inputs_()
@@ -574,7 +728,7 @@ public:
         , cost_fn_(_op->create_cost_function())
         , train_monitor_(new learning_monitor("train",_op->create_cost_function()))
         , test_monitor_(new learning_monitor("test",_op->create_cost_function()))
-        , eta_(0.01)
+        , eta_(0.01)        
     {
         if ( !construct_network() )
         {
@@ -612,22 +766,31 @@ public:
         ret = net_->get_outputs(lastn_,op->softmax);
         return ret;
     }
-
-    void run_backward( std::list<double3d_ptr> lbls, std::list<bool3d_ptr> msks )
+    
+    void run_backward( sample_ptr s )
     {
         std::list<double3d_ptr> outs = net_->get_outputs(lastn_,op->softmax);
 
         // compute gradient using a given cost function
-        std::list<double3d_ptr> grads = cost_fn_->gradient(outs,lbls,msks);
-
-        // rebalancing
+        std::list<double3d_ptr> grads = cost_fn_->gradient(outs,s->labels,s->masks);
+        
+        // rebalancing (global)
         if ( op->rebalance )
+        {
+            std::list<double3d_ptr>::iterator wit = s->wmasks.begin();
+            FOR_EACH( it, grads )
+            {
+                volume_utils::elementwise_mul_by(*it, *wit++);
+            }
+        }
+        else if ( op->patch_bal ) // patch-wise rebalancing
         {
             // default cross-entropy is multinomial (1-of-K coding)
             if ( op->cost_fn == "cross_entropy" )
             {
-                double3d_ptr rbmask =
-                    volume_utils::multinomial_rebalance_mask(lbls);
+                // TODO: Should exclude the locations that are masked out
+                double3d_ptr rbmask = 
+                    volume_utils::multinomial_rebalance_mask(s->labels);
 
                 FOR_EACH( it, grads )
                 {
@@ -636,8 +799,9 @@ public:
             }
             else
             {
-                std::list<double3d_ptr> rbmask =
-                    volume_utils::binomial_rebalance_mask(lbls);
+                // TODO: Should exclude the locations that are masked out
+                std::list<double3d_ptr> rbmask = 
+                    volume_utils::binomial_rebalance_mask(s->labels);
 
                 std::list<double3d_ptr>::iterator rbmit = rbmask.begin();
                 FOR_EACH( it, grads )
@@ -653,11 +817,11 @@ public:
             {
                 volume_utils::normalize(*it);
             }
-        }
+        }        
 
         std::list<double3d_ptr>::iterator git = grads.begin();
         FOR_EACH( it, net_->outputs_ )
-        {
+        {            
             lastn_ = (*it)->run_backward(*git++,&tm_);
         }
 
@@ -683,16 +847,22 @@ private:
             net_ = builder.build(op->load_path);
             if ( !op->out_filter ) net_->disable_output_filtering();
             net_->initialize(op->outsz);
+            
+            // save net architecture 
+            std::string fname = op->save_path + "architecture.txt";
+            std::ofstream fout(fname.c_str(), std::ios::out);
+            net_->display(fout);
+            fout.close();
         }
 
         return net_->initialized();
     }
 
 
-public:
+public:    
     // test loop: test whatever you want
     void test_loop()
-    {
+    {   
     }
 
 }; // class network

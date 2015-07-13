@@ -17,7 +17,7 @@
 //
 
 #ifndef ZI_ZARGS_MATCHER_HPP
-#define ZI_ZARGS_MATCHER_HPP
+#define ZI_ZARGS_MATCHER_HPP 1
 
 #include <string>
 #include <list>

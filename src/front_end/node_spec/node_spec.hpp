@@ -49,6 +49,14 @@ public:
 	bool				fft;			// receives fft
 	bool				load;
 
+	bool				dropout;		// dropout flag
+	double				p;				// dropout rate
+
+    vec3i               sparse;         // forced sparseness
+    
+    // for scanning individual feature map
+    std::vector<std::size_t> scan_list;
+
 private:
 	// for parsing configuration file
 	boost::program_options::options_description desc_;
@@ -77,8 +85,13 @@ public:
         fout << "mom=" << mom << std::endl;
         fout << "wc=" << wc << std::endl;
         fout << "fft=" << fft << std::endl;
-        // Don't save load
-        // fout << "load=" << load << std::endl;
+        fout << "dropout=" << dropout << std::endl;
+        fout << "p=" << p << std::endl;
+
+        if ( sparse != vec3i::zero )
+        {
+            fout << "sparse=" << vec3i_to_string(sparse) << std::endl;
+        }
 
         fout.close();
 	}
@@ -113,7 +126,7 @@ private:
 
 		desc_.add_options()
 			((name+".size").c_str(),value<std::size_t>(&size)->default_value(1),"size")
-	        ((name+".activation").c_str(),value<std::string>(&activation)->default_value("logistic"),"activation")
+	        ((name+".activation").c_str(),value<std::string>(&activation)->default_value(""),"activation")
 	        ((name+".act_params").c_str(),value<std::string>(&act_params)->default_value(""),"act_params")
 	        ((name+".filter").c_str(),value<std::string>(&filter)->default_value("max"),"filter")
 	        ((name+".filter_size").c_str(),value<std::string>()->default_value("1,1,1"),"filter_size")
@@ -126,6 +139,10 @@ private:
 	        ((name+".wc").c_str(),value<double>(&wc)->default_value(0.0),"wc")	        
 	        ((name+".fft").c_str(),value<bool>(&fft)->default_value(false),"fft")
 	        ((name+".load").c_str(),value<bool>(&load)->default_value(true),"load")
+	        ((name+".dropout").c_str(),value<bool>(&dropout)->default_value(false),"dropout flag")
+	        ((name+".p").c_str(),value<double>(&p)->default_value(0.5),"dropout rate")
+            ((name+".scan_list").c_str(),value<std::string>()->default_value(""),"scan list")
+            ((name+".sparse").c_str(),value<std::string>()->default_value("0,0,0"),"sparse")
 	        ;
 	}
 
@@ -149,12 +166,26 @@ private:
 		{
 			filter_stride = vec3i(target[0],target[1],target[2]);
 		}
+
+        // scan list
+        target.clear();
+        source = vm[name+".scan_list"].as<std::string>();
+        scan_list = parse_batch_range(source);
+
+        // sparseness
+        target.clear();
+        source = vm[name+".sparse"].as<std::string>();
+        if ( _parser.parse(&target,source) )
+        {
+            sparse = vec3i(target[0],target[1],target[2]);
+        }
 	}
 
 
 public:
 	node_spec( const std::string& _name )
 		: name(_name)
+        , scan_list()
 	{
 		initialize();
 	}

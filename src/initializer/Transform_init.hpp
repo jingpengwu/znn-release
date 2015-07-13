@@ -27,7 +27,7 @@ namespace znn {
 
 class Transform_init : virtual public initializer
 {
-private:
+protected:
 	double 	lower;
 	double 	upper;
 

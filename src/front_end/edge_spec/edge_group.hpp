@@ -44,7 +44,10 @@ private:
 	vec3i					sparse_;
 
 	// weight loaded
-	bool					loaded;
+	bool					loaded_;
+
+	// crop
+	bool					crop_;
 
 
 public:
@@ -90,6 +93,7 @@ private:
 	void set_spec( edge_spec_ptr spec )
 	{
 		spec_ = spec;
+		crop_ = spec->crop;
 	}
 
 	void add_edge( edge_ptr edge )
@@ -138,7 +142,12 @@ public:
 
 	bool is_loaded() const
 	{
-		return loaded;
+		return loaded_;
+	}
+
+	bool is_crop() const
+	{
+		return crop_;
 	}
 
 
@@ -146,6 +155,7 @@ public:
 	void save( const std::string& path, bool history = false ) const
 	{
 		spec_->save(path);	// save edge specification
+		if ( crop_ ) return;
 		save_weight(path);	// save weight
 
 		if ( history )
@@ -161,6 +171,8 @@ private:
 
 	void save_weight( const std::string& path ) const
 	{
+		if ( crop_ ) return;
+
 		std::string fpath = path + name_ + ".weight";
         std::ofstream fout(fpath.c_str(), BINARY_WRITE);
 
@@ -173,6 +185,8 @@ private:
 
 	void accumulate_weight( const std::string& path ) const
 	{
+		if ( crop_ ) return;
+
 		std::string fpath = path + name_ + ".weight.hist";
         std::ofstream fout(fpath.c_str(), BINARY_ACCUM);
 
@@ -187,11 +201,14 @@ private:
 	{
 		std::string fpath = path + name_ + ".spec";
 		bool ret = spec_->build(fpath);
+		crop_ = spec_->crop;
 		return ret;
 	}
 
 	bool load_weight( std::ifstream& fin )
 	{
+		if ( crop_ ) return false;
+
 		STRONG_ASSERT( fin );
 
 		FOR_EACH( it, edges_ )
@@ -207,19 +224,18 @@ private:
                         (*W)[x][y][z] = d;
                     }
 
-            // vec3i s = (*it)->get_sparse();
-			// (*it)->set_W(W);
-			// (*it)->set_sparse(s);
             (*it)->reset_W(W);
 		}
 
 		fin.close();
-		loaded = true;
+		loaded_ = true;
 		return true;
 	}
 
 	bool load_weight( const std::string& path )
 	{
+		if ( crop_ ) return false;
+
 		std::string fpath = path + name_ + ".weight";
 		std::ifstream fin(fpath.c_str(), BINARY_READ);
 		if ( !fin ) return false;
@@ -229,13 +245,15 @@ private:
 
 	bool load_weight( const std::string& path, std::size_t idx )
 	{
+		if ( crop_ ) return false;
+
 		std::string fpath = path + name_ + ".weight.hist";
 		std::ifstream fin(fpath.c_str(), BINARY_READ);
 		if ( !fin ) return false;
 
 		// get length of the file
 		fin.seekg(0,fin.end);
-		int len = fin.tellg();
+		int64_t len = fin.tellg();
 		STRONG_ASSERT( len > 0 );
 		
 		// idx validity check
@@ -245,7 +263,7 @@ private:
 		STRONG_ASSERT( len/sz > idx );
 
 		// seek
-		int pos = sz*idx;
+		int64_t pos = sz*idx;
 		fin.seekg(pos,fin.beg);
 
 		return load_weight(fin);
@@ -253,20 +271,26 @@ private:
 
 
 public:
-	void display() const
+	void display(std::ostream& os = std::cout) const
 	{
-		std::cout << "[" << name() << "]" << std::endl;
+		os << "[" << name() << "]" << "\n";
 		
 		// Kernel
-	  	std::cout << "Kernel size:\t\t" << spec_->size << " x "
-	  			  << count() << std::endl;
+	  	os << "Kernel size:\t\t" << spec_->size << " x "
+		   << count() << "\n";
+
+		if ( crop_ )
+		{
+			os << "Crop offset:\t\t" << spec_->crop_offset << "\n";
+			return;
+		}
 
 	  	vec3i sparse = edges_.front()->get_sparse();
 	  	if ( sparse != vec3i::one )
 	  	{
-	  		std::cout << "Sparseness:\t\t" << sparse << std::endl;
-		  	std::cout << "Real filter size:\t" 
-		  			  << spec_->real_filter_size(sparse) << std::endl;
+	  		os << "Sparseness:\t\t" << sparse << "\n";
+		  	os << "Real filter size:\t" 
+		  	   << spec_->real_filter_size(sparse) << "\n";
 		}
 	}
 
@@ -283,8 +307,8 @@ private:
 		, source_(source)
 		, target_(target)
 		, sparse_(vec3i::one)
-		, loaded(false)
-		// , initializer_()
+		, loaded_(false)
+		, crop_(false)
 	{
 		set_spec(edge_spec_ptr(new edge_spec(name)));
 		// std::cout << "edge_group " << name_ << " has created!" << std::endl;

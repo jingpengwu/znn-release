@@ -52,7 +52,7 @@ private:
     node_ptr        out_   ;
     double3d_ptr    W_     ;
     complex3d_ptr   fft_   ;
-    vec3i           sparse_;
+    vec3i           sparse_;    
 
     // norm
     double          norm_;
@@ -63,6 +63,10 @@ private:
     double3d_ptr    V_  ;    // momentum volume
     double          wc_ ;    // weight decay parameter
     double          szB_;    // minibatch size (for averaging gradients)
+
+    // Crop
+    bool            crop_;
+    vec3i           crop_offset_;
 
 
 public:
@@ -79,7 +83,9 @@ public:
         , mom_(mom)
         , V_(volume_pool.get_double3d(x,y,z))
         , wc_(wc)
-        , szB_(szB)        
+        , szB_(szB)
+        , crop_(false)
+        , crop_offset_(vec3i::zero)
     {
         volume_utils::zero_out(V_);
     }
@@ -97,7 +103,9 @@ public:
         , mom_(mom)
         , V_(volume_pool.get_double3d(W))
         , wc_(wc)
-        , szB_(szB)        
+        , szB_(szB)
+        , crop_(false)
+        , crop_offset_(vec3i::zero)
     {
         volume_utils::zero_out(V_);
     }
@@ -142,6 +150,7 @@ public:
         if ( size_of(W) == size_ )
         {
             W_ = volume_utils::sparse_decompress(W,sparse_);
+            fft_.reset();
         }
         else
         {
@@ -185,6 +194,16 @@ public:
                      (size_[1]-1)*sparse_[1]+1,
                      (size_[2]-1)*sparse_[2]+1);
 
+    }
+
+    void set_crop( bool b )
+    {
+        crop_ = b;
+    }
+
+    void set_crop_offset( const vec3i& offset )
+    {
+        crop_offset_ = offset;
     }
 
     friend class node;
@@ -254,13 +273,23 @@ private:
 
     double mom_;
     double v_  ;
-    double wc_ ;    
+    double wc_ ;
     double szB_;
+
+    // Dropout
+    bool dropout_;
+    bool inference_;
+
+    // Dropout rate
+    double p_;
+
+    // Dropout mask
+    bool3d_ptr mask_;
     
 public:
     node(const std::string& name, double bias = 0.01, double eta = 0.0001,
          std::size_t layer_no = 0, std::size_t neuron_no = 0,
-         error_fn_ptr error_fn = error_fn_ptr(new logistic_error_fn),
+         error_fn_ptr error_fn = error_fn_ptr(),
          double mom = 0.0, double wc = 0.0, double szB = 1.0)
         : name_(name)
         , m_()
@@ -294,8 +323,17 @@ public:
         , v_(0.0)
         , wc_(wc)
         , szB_(szB)
+        , dropout_(false)
+        , inference_(false)
+        , p_(0.5)
+        , mask_()
     {
         real_filter_size_ = (filter_size_-vec3i::one)*sparse_+vec3i::one;
+    }
+
+    double3d_ptr get_activation()
+    {
+        return f_;
     }
 
     void set_error_fn(error_fn_ptr ef)
@@ -331,6 +369,11 @@ public:
     vec3i get_size() const
     {
         return size_;
+    }
+
+    vec3i get_filtered_size() const
+    {
+        return size_ - real_filter_size_ + vec3i::one;
     }
 
     void set_size( const vec3i& size )
@@ -516,38 +559,78 @@ public:
         return out_edges_.size();
     }
 
+    bool get_dropout() const
+    {
+        return dropout_;
+    }
+
+    void set_dropout(bool b)
+    {
+        dropout_ = b;
+    }
+    
+    bool get_inference() const
+    {
+        return inference_;
+    }
+
+    void set_inference(bool b)
+    {
+        inference_ = b;
+    }
+
+    double get_dropout_rate() const
+    {
+        return p_;
+    }
+
+    void set_dropout_rate(double p)
+    {
+        p_ = p;
+    }
+
 private:
     template<class Manager>
     void forward_edge(edge_ptr e, Manager task_manager)
     {
         zi::guard g(*e);
-        
-        if ( sends_fft_ )
+
+        // special edges
+        if ( e->crop_ )
         {
-            ZI_ASSERT(e->out_->receives_fft_);
-            if ( !e->fft_ )
-            {
-                e->fft_ = fftw::forward_pad(e->W_,out_size());
-            }
-            e->out_->template receive_f<Manager>(
-                volume_utils::elementwise_mul(fft_,e->fft_), task_manager);
+            vec3i off = e->crop_offset_;
+            vec3i sz  = size_of(f_) - off - off;
+            e->out_->template receive_f<Manager>(volume_utils::crop(f_, off, sz), task_manager);
         }
         else
         {
-            ZI_ASSERT(!e->out_->receives_fft_);
-            if ( e->size_ == vec3i::one )
+            if ( sends_fft_ )
             {
-                e->out_->template receive_f<Manager>(bf_conv_constant(f_, (*e->W_)[0][0][0]), task_manager);
+                ZI_ASSERT(e->out_->receives_fft_);
+                if ( !e->fft_ )
+                {
+                    e->fft_ = fftw::forward_pad(e->W_,out_size());
+                }
+                e->out_->template receive_f<Manager>(
+                    volume_utils::elementwise_mul(fft_,e->fft_), task_manager);
             }
             else
             {
-                if ( e->sparse_ == vec3i::one )
+                ZI_ASSERT(!e->out_->receives_fft_);
+                if ( e->size_ == vec3i::one )
                 {
-                    e->out_->template receive_f<Manager>(bf_conv(f_, e->W_), task_manager);
+                    e->out_->template receive_f<Manager>(bf_conv_constant(f_, (*e->W_)[0][0][0]), task_manager);
                 }
                 else
                 {
-                    e->out_->template receive_f<Manager>(bf_conv_sparse(f_, e->W_, e->sparse_), task_manager);
+                    if ( e->sparse_ == vec3i::one )
+                    {
+                        e->out_->template receive_f<Manager>(bf_conv(f_, e->W_), task_manager);
+                    }
+                    else
+                    {
+                        e->out_->template receive_f<Manager>(bf_conv_sparse(f_, e->W_, e->sparse_), task_manager);
+                    }
                 }
             }
         }
@@ -559,55 +642,78 @@ private:
         zi::guard g(*e);
         double3d_ptr dEdW;
 
-        if ( receives_fft_ )
+        // special edge
+        if ( e->crop_ )
         {
-            ZI_ASSERT(e->in_->sends_fft_);
-            
-            complex3d_ptr dEdW_fft
-                = volume_utils::elementwise_mul(e->in_->fft_, dEdX_fft_);
+            vec3i off  = e->crop_offset_;
+            vec3i insz = size_of(dEdX_) + off + off;
+            double3d_ptr grad = volume_pool.get_double3d(insz);
+            volume_utils::zero_out(grad);
 
-            vec3i s = in_edges_.front()->in_->out_size();
+            std::size_t ox = off[0];
+            std::size_t oy = off[1];
+            std::size_t oz = off[2];
+            std::size_t sx = dEdX_->shape()[0];
+            std::size_t sy = dEdX_->shape()[1];
+            std::size_t sz = dEdX_->shape()[2];
 
-            dEdW = fftw::backward(dEdW_fft,s);
-
-            // [TODO: zlateski]  normalize after cropping
-            dEdW = volume_utils::normalize_flip(dEdW);
-            dEdW = volume_utils::crop_left(dEdW,e->real_size());
-
-            complex3d_ptr grad
-                = volume_utils::elementwise_mul(dEdX_fft_, e->fft_);
+            (*grad)[boost::indices[range(ox,ox+sx)][range(oy,oy+sy)][range(oz,oz+sz)]] =
+                (*dEdX_)[boost::indices[range(0,sx)][range(0,sy)][range(0,sz)]];
 
             e->in_->template receive_grad<Manager>(grad, task_manager);
         }
         else
         {
-            ZI_ASSERT(!e->in_->sends_fft_);
-            
-            if ( e->size_ == vec3i::one )
-            {                
-                dEdW = volume_pool.get_double3d(1,1,1);
-                (*dEdW)[0][0][0] = bf_conv_flipped_constant(e->in_->f_, dEdX_);
-                double3d_ptr grad = bf_conv_inverse_constant(dEdX_, (*e->W_)[0][0][0]);
+            if ( receives_fft_ )
+            {
+                ZI_ASSERT(e->in_->sends_fft_);
+                
+                complex3d_ptr dEdW_fft
+                    = volume_utils::elementwise_mul(e->in_->fft_, dEdX_fft_);
+
+                vec3i s = in_edges_.front()->in_->out_size();
+
+                dEdW = fftw::backward(dEdW_fft,s);
+
+                // [TODO: zlateski]  normalize after cropping
+                dEdW = volume_utils::normalize_flip(dEdW);
+                dEdW = volume_utils::crop_left(dEdW,e->real_size());
+
+                complex3d_ptr grad
+                    = volume_utils::elementwise_mul(dEdX_fft_, e->fft_);
+
                 e->in_->template receive_grad<Manager>(grad, task_manager);
             }
             else
-            {                
-                if ( e->sparse_ == vec3i::one )
-                {
-                    dEdW = bf_conv_flipped(e->in_->f_, dEdX_);
-                    double3d_ptr grad = bf_conv_inverse(dEdX_, e->W_);
+            {
+                ZI_ASSERT(!e->in_->sends_fft_);
+                
+                if ( e->size_ == vec3i::one )
+                {                
+                    dEdW = volume_pool.get_double3d(1,1,1);
+                    (*dEdW)[0][0][0] = bf_conv_flipped_constant(e->in_->f_, dEdX_);
+                    double3d_ptr grad = bf_conv_inverse_constant(dEdX_, (*e->W_)[0][0][0]);
                     e->in_->template receive_grad<Manager>(grad, task_manager);
                 }
                 else
-                {
-                    dEdW = bf_conv_flipped_sparse(e->in_->f_, dEdX_, e->sparse_);
-                    double3d_ptr grad = bf_conv_inverse_sparse(dEdX_, e->W_, e->sparse_);
-                    e->in_->template receive_grad<Manager>(grad, task_manager);
+                {                
+                    if ( e->sparse_ == vec3i::one )
+                    {
+                        dEdW = bf_conv_flipped(e->in_->f_, dEdX_);
+                        double3d_ptr grad = bf_conv_inverse(dEdX_, e->W_);
+                        e->in_->template receive_grad<Manager>(grad, task_manager);
+                    }
+                    else
+                    {
+                        dEdW = bf_conv_flipped_sparse(e->in_->f_, dEdX_, e->sparse_);
+                        double3d_ptr grad = bf_conv_inverse_sparse(dEdX_, e->W_, e->sparse_);
+                        e->in_->template receive_grad<Manager>(grad, task_manager);
+                    }
                 }
             }
-        }
 
-        update_edge(e, dEdW);
+            update_edge(e, dEdW);
+        }
     }
 
     void update_edge(edge_ptr e, double3d_ptr dEdW)
@@ -670,7 +776,7 @@ private:
             {
                 in_received_ = 0;
                 ZI_ASSERT(f_);
-                error_fn_->add_apply(bias_,f_);
+                if ( error_fn_ ) error_fn_->add_apply(bias_,f_);
                 this->template run_forward<Manager>(task_manager);
             }
         }
@@ -726,7 +832,7 @@ private:
                 volume_utils::normalize(x);
                 f_ = volume_utils::crop_right(x,size_);
 
-                error_fn_->add_apply(bias_,f_);
+                if ( error_fn_ ) error_fn_->add_apply(bias_,f_);
 
                 this->template run_forward<Manager>(task_manager);
             }
@@ -852,6 +958,14 @@ private:
             f_ = fandi.first;
             filter_indices_ = fandi.second;
         }
+
+        // Dropout
+        if ( dropout_ && !inference_ )
+        {
+            // 1. draw a new dropout mask 
+            // 2. apply it to the activation
+            mask_ = volume_utils::dropout(f_, p_);
+        }
         
         ZI_ASSERT((in_received_==0)&&(out_received_==0));
         ++pass_no_;
@@ -884,7 +998,15 @@ private:
         ZI_ASSERT((in_received_==0)&&(out_received_==0));
         ++pass_no_;
 
-        dEdX_ = error_fn_->gradient(dEdX_, f_);
+        // Dropout
+        if ( dropout_ && !inference_ )
+        {
+            double scale = static_cast<double>(1)/(static_cast<double>(1) - p_);            
+            volume_utils::elementwise_masking(dEdX_, mask_);
+            volume_utils::elementwise_mul_by(dEdX_, scale);
+        }
+
+        if ( error_fn_ ) dEdX_ = error_fn_->gradient(dEdX_, f_);
 
         if ( filter_size_ != vec3i::one )
         {
@@ -1045,6 +1167,16 @@ public:
 public:
     void sends_fft(bool b)
     {
+        if ( out_edges_.front()->crop_ )
+        {
+            sends_fft_ = false;
+            FOR_EACH( it, out_edges_ )
+            {
+                (*it)->out_->receives_fft_ = false;
+            }
+            return;
+        }
+
         sends_fft_ = b;
         FOR_EACH( it, out_edges_ )
         {
@@ -1054,6 +1186,16 @@ public:
 
     void receives_fft(bool b)
     {
+        if ( in_edges_.front()->crop_ )
+        {
+            receives_fft_ = false;
+            FOR_EACH( it, in_edges_ )
+            {
+                (*it)->in_->sends_fft_ = false;
+            }   
+            return;
+        }
+
         receives_fft_ = b;
         FOR_EACH( it, in_edges_ )
         {

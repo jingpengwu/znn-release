@@ -157,7 +157,15 @@ public:
 	{
 		FOR_EACH( it, node_groups_ )
 		{
-			(*it)->receives_fft(fft);	
+			(*it)->receives_fft(fft);
+		}
+	}
+
+	void set_inference( bool b )
+	{
+		FOR_EACH( it, nodes_ )
+		{
+			(*it)->set_inference(b);
 		}
 	}
 
@@ -407,13 +415,13 @@ public:
 
 		FOR_EACH( it, node_groups_ )
 		{
-			node_spec_ptr spec = (*it)->spec();			
+			node_spec_ptr spec = (*it)->spec();
 			(*it)->load_bias(load_path_);
 		}
 
 		FOR_EACH( it, edge_groups_ )
 		{
-			edge_spec_ptr spec = (*it)->spec();			
+			edge_spec_ptr spec = (*it)->spec();
 			(*it)->load_weight(load_path_);
 		}
 	}
@@ -435,17 +443,17 @@ public:
 
 
 public:
-	void display() const
+	void display(std::ostream& os = std::cout) const
 	{
 		FOR_EACH( it, node_groups_ )
 		{
-			(*it)->display();
-			std::cout << std::endl;
+			(*it)->display(os);
+			os << "\n";
 
 			FOR_EACH( jt, (*it)->out_ )
 			{
-				(*jt)->display();
-				std::cout << std::endl;
+				(*jt)->display(os);
+				os << "\n";
 			}
 		}
 	}
@@ -467,13 +475,13 @@ public:
 
 		STRONG_ASSERT(boost::filesystem::is_directory(save_dir));
 
-		// nodes
+		// node groups
 		FOR_EACH( it, node_groups_ )
 		{
 			(*it)->save(path,history);
 		}
 
-		// edges
+		// edge groups
 		FOR_EACH( it, edge_groups_ )
 		{
 			(*it)->save(path,history);

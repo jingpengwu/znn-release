@@ -18,7 +18,11 @@ function [vol] = import_volume( fname, dim, ext )
 %
 % Program written by:
 % Kisuk Lee <kiskulee@mit.edu>, 2014
-    
+	
+	if ~exist('dim','var')
+		dim = []
+	end
+
 	% volume dimension
 	if isempty(dim)
 		fsz = fopen([fname '.size'], 'r');
@@ -27,8 +31,7 @@ function [vol] = import_volume( fname, dim, ext )
 		y = fread(fsz, 1, 'uint32');
 		z = fread(fsz, 1, 'uint32');
 		dim = [x y z];
-    end
-    
+	end
 	assert(numel(dim) == 3);
 	fprintf('dim = [%d %d %d]\n',dim(1),dim(2),dim(3));
 	

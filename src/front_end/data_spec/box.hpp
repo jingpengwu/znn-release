@@ -88,7 +88,7 @@ public:
 		lc[1] = std::min(lc1[1],lc2[1]);
 		lc[2] = std::min(lc1[2],lc2[2]);
 
-		return box(uc,lc);
+		return box(uc,lc);		
 	}
 
 	box intersect( const box& rhs ) const
@@ -107,7 +107,7 @@ public:
 		uc[1] = std::min(uc1[1],uc2[1]);
 		uc[2] = std::min(uc1[2],uc2[2]);
 
-		// lower corner
+		// lower cerner
 		vec3i lc;
 		vec3i lc1 = a.lower_corner();
 		vec3i lc2 = b.lower_corner();
@@ -184,8 +184,7 @@ public:
 		sz = lc - uc;
 	}
 
-	~box()
-	{}
+	~box(){}
 
 }; // class box
 

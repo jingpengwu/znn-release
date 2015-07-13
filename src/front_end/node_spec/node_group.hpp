@@ -58,6 +58,10 @@ private:
 	// cost function
 	cost_fn_ptr				cost_fn_;
 
+	// crop
+	bool					crop_;
+
+
 public:
 	std::list<double3d_ptr> get_activations( std::size_t n, bool softmax = false )
 	{
@@ -145,6 +149,16 @@ public:
 		}
 	}
 
+	void set_crop( bool b )
+	{
+		crop_ = b;
+	}
+
+	bool is_crop() const
+	{
+		return crop_;
+	}
+
 	
 // only allow node/edge factories to modify node_group
 // by declaring node/edge factories as friends
@@ -179,8 +193,15 @@ public:
 		}
 		else
 		{
-			in_sparse_ = sparse;			
-			out_sparse_ = sparse*spec_->filter_stride;
+			in_sparse_ = sparse;
+			if ( spec_->sparse != vec3i::zero )
+			{
+				out_sparse_ = spec_->sparse;
+			}
+			else
+			{
+				out_sparse_ = sparse*spec_->filter_stride;
+			}
 			init_sparse();
 		}
 
@@ -244,7 +265,15 @@ public:
 	{
 		if ( initialized() )
 		{
-			STRONG_ASSERT(out_size_ == size);
+			if ( out_size_ != size )
+			{
+				display();
+
+				std::cout << "out_size_ = " << out_size_ << std::endl;
+				std::cout << "size = " << size << std::endl;
+
+				STRONG_ASSERT(false);
+			}
 		}
 		else
 		{
@@ -255,8 +284,17 @@ public:
 
 		FOR_EACH( it, in_ )
 		{
-			(*it)->set_sparse(in_sparse_);
-			vec3i new_size = in_size_ + (*it)->real_filter_size() - vec3i::one;
+			// (*it)->set_sparse(in_sparse_);
+			vec3i new_size = in_size_;
+			if ( (*it)->is_crop() )
+			{
+				vec3i crop_offset = (*it)->spec()->crop_offset;
+				new_size += (crop_offset + crop_offset);
+			}
+			else
+			{
+				new_size += ((*it)->real_filter_size() - vec3i::one);
+			}
 			(*it)->source_->backward_init(new_size);
 		}
 	}
@@ -357,7 +395,8 @@ public:
 	void save( const std::string& path, bool history = false ) const
 	{
 		spec_->save(path);	// save node specification
-		save_bias(path);	// save bias
+		if ( crop_ ) return;
+		save_bias(path); 	// save bias
 
 		if ( history )
 		{
@@ -372,6 +411,8 @@ private:
 
 	void save_bias( const std::string& path ) const
 	{
+		if ( crop_ ) return;
+
 		std::string fpath = path + name_ + ".weight";
         std::ofstream fout(fpath.c_str(), BINARY_WRITE);
 
@@ -385,6 +426,8 @@ private:
 
 	void accumulate_weight( const std::string& path ) const
 	{
+		if ( crop_ ) return;
+
 		std::string fpath = path + name_ + ".weight.hist";
         std::ofstream fout(fpath.c_str(), BINARY_ACCUM);
 
@@ -404,6 +447,8 @@ private:
 
 	bool load_bias( std::ifstream& fin )
 	{
+		if ( crop_ ) return false;
+
 		STRONG_ASSERT( fin );
 
 		FOR_EACH( it, nodes_ )
@@ -422,6 +467,8 @@ private:
 
 	bool load_bias( const std::string& path )
 	{
+		if ( crop_ ) return false;
+
 		std::string fpath = path + name_ + ".weight";
 		std::ifstream fin(fpath.c_str(), BINARY_READ);
 		if ( !fin )
@@ -436,6 +483,8 @@ private:
 
 	bool load_bias( const std::string& path, std::size_t idx )
 	{
+		if ( crop_ ) return false;
+
 		std::string fpath = path + name_ + ".weight.hist";
 		std::ifstream fin(fpath.c_str(), BINARY_READ);
 		if ( !fin ) return false;
@@ -459,31 +508,38 @@ private:
 
 
 public:
-	void display() const
+	void display(std::ostream& os = std::cout)
 	{
-		std::cout << "[" << name() << "]" << std::endl;		
-		std::cout << "Node size:\t\t" << nodes_.front()->get_size() 
-				  << " x " << count() << std::endl;
+		os << "[" << name() << "]" << "\n";
+		os << "Node size:\t\t" << nodes_.front()->get_size()
+		   << " x " << count() << "\n";
+
+		if ( !spec()->scan_list.empty() )
+		{
+			print_range("Scan list",spec()->scan_list);
+		}
 	  	
+		if ( crop_ ) return;
+
 	  	// filter
 		if ( spec_->filter_size != vec3i::one )
 		{
-		  	std::cout << "Filter size:\t\t" <<spec_->filter_size << std::endl;
-		  	std::cout << "Filter stride:\t\t" << spec_->filter_stride << std::endl;
+		  	os << "Filter size:\t\t" << spec_->filter_size << "\n";
+		  	os << "Filter stride:\t\t" << spec_->filter_stride << "\n";
 		  	
 		  	vec3i sparse = nodes_.front()->get_sparse();
 		  	if ( sparse != vec3i::one )
 		  	{
-		  		std::cout << "Sparseness:\t\t" << sparse << std::endl;
-		  		std::cout << "Real filter size:\t" 
-		  				  << spec_->real_filter_size(sparse) << std::endl;
+		  		os << "Sparseness:\t\t" << sparse << "\n";
+		  		os << "Real filter size:\t" 
+		  				  << spec_->real_filter_size(sparse) << "\n";
 		  	}
 		}
 
 		// FFT
 		if ( count_in_connections() )
 		{
-			std::cout << "Receive FFT: " << spec_->fft << std::endl;
+			os << "Receive FFT: " << spec_->fft << "\n";
 		}
 	}
 
@@ -533,6 +589,7 @@ private:
 		, in_sparse_(vec3i::one)
 		, out_sparse_(vec3i::one)
 		, loaded_(false)
+		, crop_(false)
 	{
 		set_spec(node_spec_ptr(new node_spec(name_)));	// default spec
 		// std::cout << "node_group " << name_ << " has created!" << std::endl;
@@ -542,6 +599,7 @@ private:
 	friend class edge_factory_impl;
 	friend class neuron_group;
 	friend class net;
+	friend class feature_map_scanner;
 
 }; // class node_group
 

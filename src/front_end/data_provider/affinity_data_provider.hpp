@@ -32,7 +32,11 @@ protected:
 	virtual void load( const std::string& fname )
 	{
 		data_spec_parser parser(fname);
+		load(parser);
+	}
 
+	void load( const data_spec_parser& parser )
+	{
 		// inputs
 		FOR_EACH( it, parser.input_specs )
 		{
@@ -64,6 +68,10 @@ protected:
 				add_label(yaff, vec3i(1,1,0));
 				add_label(zaff, vec3i(0,0,1));
 
+				add_wmask(xaff, vec3i(1,1,0));
+				add_wmask(yaff, vec3i(1,1,0));
+				add_wmask(zaff, vec3i(0,0,1));
+
 				std::cout << std::endl;
 			}
 		}
@@ -92,6 +100,7 @@ protected:
 		}
 	}
 
+
 // data augmentation
 public:
 	void data_augmentation( bool data_aug = false )
@@ -106,6 +115,7 @@ public:
 		}
 	}
 
+
 // sampling
 protected:
     virtual sample_ptr get_sample( std::size_t idx )
@@ -114,6 +124,7 @@ protected:
 
     	crop_affinity(s->labels);
     	crop_affinity(s->masks);
+    	crop_affinity(s->wmasks);
 
     	return s;
 	}
@@ -143,8 +154,9 @@ protected:
         affs.push_back(crop_affinity(zaff, vec3i(0,0,1)));
     }
 
+
 protected:
-	virtual void add_label( dvolume_data_ptr lbl, vec3i sft = vec3i::zero )
+	void add_label( dvolume_data_ptr lbl, vec3i sft )
 	{
 		std::size_t idx = lbls_.size();
 		STRONG_ASSERT(idx < out_szs_.size());
@@ -158,7 +170,7 @@ protected:
 		lbls_.push_back(lbl);
 	}
 
-	virtual void add_mask( bvolume_data_ptr msk, vec3i sft = vec3i::zero )
+	void add_mask( bvolume_data_ptr msk, vec3i sft )
 	{
 		std::size_t idx = msks_.size();
 		STRONG_ASSERT(idx < out_szs_.size());
@@ -172,19 +184,41 @@ protected:
 		msks_.push_back(msk);
 	}
 
+	void add_wmask( dvolume_data_ptr lbl, vec3i sft )
+	{
+		std::size_t idx = wmsks_.size();
+		STRONG_ASSERT(idx < out_szs_.size());
+
+		vec3i FoV = out_szs_[idx];
+
+		// for affinity graph transformation
+		FoV += sft;
+		
+		double3d_ptr wmsk = 
+			volume_utils::binomial_rebalance_mask(lbl->get_volume());
+
+		dvolume_data_ptr vd = 
+			dvolume_data_ptr(new dvolume_data(wmsk));
+		
+		vd->set_offset(lbl->get_offset());
+		vd->set_FoV(FoV,sft);
+		wmsks_.push_back(vd);
+	}
+
 
 // constructor & destructor
 public:
-	affinity_data_provider( const std::string& fname, 
+	affinity_data_provider( const data_spec_parser& parser, 
 						    std::vector<vec3i> in_szs,
-						    std::vector<vec3i> out_szs )
+						    std::vector<vec3i> out_szs,
+						    bool mirroring = false )
 		: volume_data_provider()
 	{
 		in_szs_ = in_szs;
 		out_szs_ = out_szs;
-
-		load(fname);
-		init();
+		set_FoVs();
+		load(parser);
+		init(mirroring);
 	}
 
 	virtual ~affinity_data_provider()

@@ -32,11 +32,15 @@ class volume_data_provider : virtual public data_provider
 {
 protected:
 	std::list<dvolume_data_ptr>	imgs_;
-	std::list<dvolume_data_ptr>	lbls_;
+	std::list<dvolume_data_ptr>	lbls_;	
 	std::list<bvolume_data_ptr>	msks_;
+
+	// rebalanced weight masks
+	std::list<dvolume_data_ptr>	wmsks_;
 
 	std::vector<vec3i>			in_szs_;
 	std::vector<vec3i>			out_szs_;
+	std::vector<vec3i>			FoVs_;
 
 	box							range_;
 	std::vector<vec3i>         	locs_;
@@ -59,43 +63,48 @@ protected:
 	virtual void load( const std::string& fname )
 	{
 		data_spec_parser parser(fname);
-
-		// inputs
-		FOR_EACH( it, parser.input_specs )
-		{
-			std::cout << "Loading input [" << (*it)->name << "]" << std::endl;
-			std::list<dvolume_data_ptr> vols = data_builder::build_volume(*it);
-			FOR_EACH( jt, vols )
-			{
-				add_image(*jt);
-			}
-			std::cout << std::endl;
-		}
-			
-		// labels
-		FOR_EACH( it, parser.label_specs )
-		{
-			std::cout << "Loading label [" << (*it)->name << "]" << std::endl;			
-			std::list<dvolume_data_ptr> vols = data_builder::build_volume(*it);
-			FOR_EACH( jt, vols )
-			{
-				add_label(*jt);
-			}
-			std::cout << std::endl;
-		}
-
-		// masks
-		FOR_EACH( it, parser.mask_specs )
-		{
-			std::cout << "Loading mask [" << (*it)->name << "]" << std::endl;			
-			std::list<bvolume_data_ptr> vols = data_builder::build_mask(*it);
-			FOR_EACH( jt, vols )
-			{
-				add_mask(*jt);
-			}
-			std::cout << std::endl;
-		}
+        load(parser);
 	}
+
+    void load( const data_spec_parser& parser )
+    {
+        // inputs
+        FOR_EACH( it, parser.input_specs )
+        {
+            std::cout << "Loading input [" << (*it)->name << "]" << std::endl;
+            std::list<dvolume_data_ptr> vols = data_builder::build_volume(*it);
+            FOR_EACH( jt, vols )
+            {
+                add_image(*jt);
+            }
+            std::cout << std::endl;
+        }
+            
+        // labels
+        FOR_EACH( it, parser.label_specs )
+        {
+            std::cout << "Loading label [" << (*it)->name << "]" << std::endl;          
+            std::list<dvolume_data_ptr> vols = data_builder::build_volume(*it);
+            FOR_EACH( jt, vols )
+            {
+                add_label(*jt);
+                add_wmask(*jt);
+            }
+            std::cout << std::endl;
+        }
+
+        // masks
+        FOR_EACH( it, parser.mask_specs )
+        {
+            std::cout << "Loading mask [" << (*it)->name << "]" << std::endl;           
+            std::list<bvolume_data_ptr> vols = data_builder::build_mask(*it);
+            FOR_EACH( jt, vols )
+            {
+                add_mask(*jt);
+            }
+            std::cout << std::endl;
+        }
+    }
 
 
 // data augmentation
@@ -148,6 +157,13 @@ protected:
     		lbls.push_back((*it)->get_patch(loc));
     	}
 
+    	// rebalance masks
+    	std::list<double3d_ptr> wmsks;
+    	FOR_EACH( it, wmsks_ )
+    	{
+    		wmsks.push_back((*it)->get_patch(loc));
+    	}
+
     	// masks
     	std::list<bool3d_ptr> msks;
     	FOR_EACH( it, msks_ )
@@ -155,7 +171,7 @@ protected:
     		msks.push_back((*it)->get_patch(loc));
     	}
 
-    	sample_ptr s = sample_ptr(new sample(imgs, lbls, msks));
+    	sample_ptr s = sample_ptr(new sample(imgs, lbls, wmsks, msks));
 
     	if ( trans_ ) trans_->transform(s);
 
@@ -193,9 +209,25 @@ protected:
 	{
 		std::size_t idx = msks_.size();
 		STRONG_ASSERT(idx < out_szs_.size());
-		
+
 		msk->set_FoV(out_szs_[idx]);
 		msks_.push_back(msk);
+	}
+
+	virtual void add_wmask( dvolume_data_ptr lbl )
+	{
+		std::size_t idx = wmsks_.size();
+		STRONG_ASSERT(idx < out_szs_.size());
+
+		double3d_ptr wmsk = 
+			volume_utils::binomial_rebalance_mask(lbl->get_volume());
+
+		dvolume_data_ptr vd = 
+			dvolume_data_ptr(new dvolume_data(wmsk));
+		
+		vd->set_offset(lbl->get_offset());
+		vd->set_FoV(out_szs_[idx]);
+		wmsks_.push_back(vd);
 	}
 
 	void update_range()
@@ -204,28 +236,109 @@ protected:
 
 		FOR_EACH( it, imgs_ )
 		{
-			range_ = range_.intersect((*it)->get_range());			
+			range_ = range_.intersect((*it)->get_range());
 		}
 
 		FOR_EACH( it, lbls_ )
-		{			
-			range_ = range_.intersect((*it)->get_range());		
+		{
+			range_ = range_.intersect((*it)->get_range());
 		}
 	}
 
 
 protected:
-    virtual void init()
+    virtual void init( bool mirroring = false )
     {
     	// integrity check
     	STRONG_ASSERT(in_szs_.size()  == imgs_.size());    	
 	    STRONG_ASSERT(out_szs_.size() == lbls_.size());
 	    STRONG_ASSERT(out_szs_.size() == msks_.size());
 
+	    // boundary mirroring
+	    if ( mirroring ) boundary_mirroring();
+
         // valid locations
         collect_valid_locations();
 
+        // global rebalancing
+        // global_rebalancing();
+
         initialized_ = true;
+    }
+
+    // [11/15/2014 kisukee]
+    // Implementation is still not stable.
+    virtual void boundary_mirroring()
+    {
+    	std::cout << "[volume_data_provider] boundary_mirroring" << std::endl;
+
+    	std::set<std::size_t> x;
+    	std::set<std::size_t> y;
+    	std::set<std::size_t> z;
+    	
+    	FOR_EACH( it, FoVs_ )
+    	{
+    		vec3i FoV = *it;
+    		x.insert(FoV[0]/2);
+    		y.insert(FoV[1]/2);
+    		z.insert(FoV[2]/2);
+    	}
+
+    	STRONG_ASSERT(!x.empty());
+    	STRONG_ASSERT(!y.empty());
+    	STRONG_ASSERT(!z.empty());
+
+    	vec3i offset(*x.rbegin(), *y.rbegin(), *z.rbegin());
+
+    	std::cout << "offset = " << offset << std::endl;
+
+    	std::list<dvolume_data_ptr>	mimgs;
+    	std::vector<vec3i>::iterator fov = FoVs_.begin();
+    	std::vector<vec3i>::iterator insz = in_szs_.begin();
+		FOR_EACH( it, imgs_ )
+		{
+			dvolume_data_ptr img = *it;
+
+			// field of view
+			vec3i FoV = *fov++;
+			
+			// mirrored volume
+			double3d_ptr mimg = 
+				volume_utils::mirror_boundary(img->get_volume(),FoV);
+			std::cout << "msize = " << size_of(mimg) << std::endl;
+
+			// new data volume
+			dvolume_data_ptr 
+				vd = dvolume_data_ptr(new dvolume_data(mimg));
+				vd->set_offset(img->get_offset() + offset - FoV/vec3i(2,2,2));
+				vd->set_FoV(*insz++);
+
+			mimgs.push_back(vd);
+		}
+
+		// swap with new mirrored image volumes
+		imgs_.swap(mimgs);
+
+		// broadcast offset
+		FOR_EACH( it, lbls_ )
+		{
+			vec3i old = (*it)->get_offset();
+			(*it)->set_offset(old + offset);
+		}
+
+		// broadcast offset
+		FOR_EACH( it, msks_ )
+		{
+			vec3i old = (*it)->get_offset();
+			(*it)->set_offset(old + offset);
+		}
+
+		// broadcast offset
+		FOR_EACH( it, wmsks_ )
+		{
+			vec3i old = (*it)->get_offset();
+			(*it)->set_offset(old + offset);
+		}
     }
 
     void collect_valid_locations()
@@ -255,6 +368,36 @@ protected:
         std::cout << "Number of valid samples: " << locs_.size() << std::endl;
 		std::cout << "Completed. (Elapsed time: " 
                   << wt.elapsed<double>() << " secs)\n" << std::endl;
+    }
+
+    // void global_rebalancing()
+    // {
+    //     std::cout << "[volume_data_provider] global_rebalancing" << std::endl;
+    //     zi::wall_timer wt;
+
+    //     update_range();
+
+    //     std::cout << "Completed. (Elapsed time: " 
+    //               << wt.elapsed<double>() << " secs)\n" << std::endl;
+    // }
+
+    void set_FoVs()
+    {
+		vec3i out_sz = out_szs_.front();
+
+		// [kisuklee]
+		// Currently, output sizes are assumed to be the same.
+		FOR_EACH( it, out_szs_ )
+		{
+			STRONG_ASSERT(*it == out_sz);
+		}
+
+		FoVs_.clear();
+		FOR_EACH( it, in_szs_ )
+		{
+			vec3i in_sz = *it;
+			FoVs_.push_back(in_sz - out_sz + vec3i::one);
+		}
     }
 
 
@@ -309,17 +452,19 @@ public:
 		, trans_()
 	{}
 
-	volume_data_provider( const std::string& fname, 
-						   std::vector<vec3i> in_szs,
-						   std::vector<vec3i> out_szs )
-		: in_szs_(in_szs)
-		, out_szs_(out_szs)
-		, initialized_(false)
-		, trans_()
-	{
-		load(fname);
-		init();
-	}
+    volume_data_provider( const data_spec_parser& parser,
+                          std::vector<vec3i> in_szs,
+                          std::vector<vec3i> out_szs,
+                          bool mirroring = false )
+        : in_szs_(in_szs)
+        , out_szs_(out_szs)
+        , initialized_(false)
+        , trans_()
+    {
+        set_FoVs();
+        load(parser);
+        init(mirroring);
+    }
 
 	virtual ~volume_data_provider()
 	{}

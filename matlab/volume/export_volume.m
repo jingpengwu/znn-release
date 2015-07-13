@@ -20,7 +20,7 @@ function [] = export_volume( fname, volume, ext )
 	% volume dimension
 	fsz = fopen([fname '.size'], 'w');
 	sz  = size(volume);	
-	if length(sz) == 2
+	if ndims(sz) < 3
 		sz = [sz 1];
 	end
 	fwrite(fsz, uint32(sz), 'uint32');
@@ -32,4 +32,5 @@ function [] = export_volume( fname, volume, ext )
 		fvol = fopen(fname, 'w');
 	end		
 	fwrite(fvol, double(volume), 'double');
+
 end

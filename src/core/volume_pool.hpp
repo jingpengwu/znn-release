@@ -71,25 +71,25 @@ public:
         , map_()
     {}
 
-    inline void add_used(std::size_t s)
+    void add_used(std::size_t s)
     {
         zi::mutex::guard g(m_);
         used_memory_ += s;
     }
 
-    inline void add_cached(std::size_t s)
+    void add_cached(std::size_t s)
     {
         zi::mutex::guard g(m_);
         cached_memory_ += s;
     }
 
-    inline void reduce_cached(std::size_t s)
+    void reduce_cached(std::size_t s)
     {
         zi::mutex::guard g(m_);
         cached_memory_ -= s;
     }
 
-    inline void report()
+    void report()
     {
         zi::mutex::guard g(m_);
         std::cout << "Used: " << (used_memory_>>20) << " MB\n"
@@ -119,7 +119,7 @@ private:
     std::size_t    num_elements_;
 
 public:
-    inline void clear()
+    void clear()
     {
         zi::mutex::guard g(m_);
         FOR_EACH( it, list_ )
@@ -132,7 +132,7 @@ public:
     }
 
 public:
-    inline void return_volume( V* v )
+    void return_volume( V* v )
     {
         zi::mutex::guard g(m_);
         //std::cout << "Returned Volume\n";
@@ -163,7 +163,7 @@ public:
         clear();
     }
 
-    inline boost::shared_ptr<V> get()
+    boost::shared_ptr<V> get()
     {
         V* r = 0;
         {
@@ -197,7 +197,7 @@ public:
                                                 this, zi::placeholders::_1));
     }
 
-    inline std::size_t reduce_cache(std::size_t n = 1)
+    std::size_t reduce_cache(std::size_t n = 1)
     {
         zi::mutex::guard g(m_);
 
@@ -217,25 +217,25 @@ public:
         return cached_memory_;
     }
 
-    inline std::size_t mem_used() const
+    std::size_t mem_used() const
     {
         zi::mutex::guard g(m_);
         return mem_used_;
     }
 
-    inline std::size_t mem_cache() const
+    std::size_t mem_cache() const
     {
         zi::mutex::guard g(m_);
         return cached_memory_;
     }
 
-    inline std::size_t cache_size() const
+    std::size_t cache_size() const
     {
         zi::mutex::guard g(m_);
         return list_.size();
     }
 
-    inline std::size_t total_size() const
+    std::size_t total_size() const
     {
         zi::mutex::guard g(m_);
         return num_elements_;
@@ -261,7 +261,7 @@ private:
 
 
 public:
-    inline std::size_t mem_used() const
+    std::size_t mem_used() const
     {
         std::size_t r = 0;
         {
@@ -295,7 +295,7 @@ public:
         return r;
     }
 
-    inline std::size_t cache_size() const
+    std::size_t cache_size() const
     {
         std::size_t r = 0;
         {
@@ -330,7 +330,7 @@ public:
     }
 
 private:
-    inline void clear_double3d()
+    void clear_double3d()
     {
         zi::mutex::guard g(double3d_m_);
         FOR_EACH( it, double3d_pools_ )
@@ -339,7 +339,7 @@ private:
         }
     }
 
-    inline void clear_complex3d()
+    void clear_complex3d()
     {
         zi::mutex::guard g(complex3d_m_);
         FOR_EACH( it, complex3d_pools_ )
@@ -349,7 +349,7 @@ private:
     }
 
     // [07/08/2013 kisuklee]
-    inline void clear_bool3d()
+    void clear_bool3d()
     {
         zi::mutex::guard g(bool3d_m_);
         FOR_EACH( it, bool3d_pools_ )
@@ -358,7 +358,7 @@ private:
         }
     }
 
-    inline void clear_long3d()
+    void clear_long3d()
     {
         zi::mutex::guard g(long3d_m_);
         FOR_EACH( it, long3d_pools_ )
@@ -367,7 +367,7 @@ private:
         }
     }
 
-    inline void destroy_double3d()
+    void destroy_double3d()
     {
         zi::mutex::guard g(double3d_m_);
         FOR_EACH( it, double3d_pools_ )
@@ -376,7 +376,7 @@ private:
         }
     }
 
-    inline void destroy_complex3d()
+    void destroy_complex3d()
     {
         zi::mutex::guard g(complex3d_m_);
         FOR_EACH( it, complex3d_pools_ )
@@ -386,7 +386,7 @@ private:
     }
 
     // [07/08/2013 kisuklee]
-    inline void destroy_bool3d()
+    void destroy_bool3d()
     {
         zi::mutex::guard g(bool3d_m_);
         FOR_EACH( it, bool3d_pools_ )
@@ -395,7 +395,7 @@ private:
         }
     }
 
-    inline void destroy_long3d()
+    void destroy_long3d()
     {
         zi::mutex::guard g(long3d_m_);
         FOR_EACH( it, long3d_pools_ )
@@ -404,7 +404,7 @@ private:
         }
     }
 
-    inline volume_pool<double3d>* get_double3d_pool( const vec3i& s )
+    volume_pool<double3d>* get_double3d_pool( const vec3i& s )
     {
         zi::mutex::guard g(double3d_m_);
         if ( double3d_pools_.count(s) )
@@ -419,7 +419,7 @@ private:
         }
     }
 
-    inline volume_pool<complex3d>* get_complex3d_pool( const vec3i& s )
+    volume_pool<complex3d>* get_complex3d_pool( const vec3i& s )
     {
         zi::mutex::guard g(complex3d_m_);
         if ( complex3d_pools_.count(s) )
@@ -435,7 +435,7 @@ private:
     }
 
     // [07/08/2013 kisuklee]
-    inline volume_pool<bool3d>* get_bool3d_pool( const vec3i& s )
+    volume_pool<bool3d>* get_bool3d_pool( const vec3i& s )
     {
         zi::mutex::guard g(bool3d_m_);
         if ( bool3d_pools_.count(s) )
@@ -450,7 +450,7 @@ private:
         }
     }
 
-    inline volume_pool<long3d>* get_long3d_pool( const vec3i& s )
+    volume_pool<long3d>* get_long3d_pool( const vec3i& s )
     {
         zi::mutex::guard g(long3d_m_);
         if ( long3d_pools_.count(s) )
@@ -477,96 +477,96 @@ public:
         destroy_long3d(); // [07/08/2013 kisuklee]
     }
 
-    inline shared_ptr<double3d>
+    shared_ptr<double3d>
     get_double3d( std::size_t x, std::size_t y, std::size_t z )
     {
         return get_double3d_pool(vec3i(x,y,z))->get();
     }
 
-    inline shared_ptr<double3d>
+    shared_ptr<double3d>
     get_double3d( shared_ptr<double3d> x )
     {
         return get_double3d(x->shape()[0], x->shape()[1], x->shape()[2] );
     }
 
-    inline shared_ptr<double3d>
+    shared_ptr<double3d>
     get_double3d( const vec3i& v )
     {
         return get_double3d_pool(v)->get();
     }
 
-    inline shared_ptr<complex3d>
+    shared_ptr<complex3d>
     get_complex3d( std::size_t x, std::size_t y, std::size_t z )
     {
         return get_complex3d_pool(vec3i(x,y,z/2+1))->get();
     }
 
-    inline shared_ptr<complex3d>
+    shared_ptr<complex3d>
     get_complex3d( shared_ptr<complex3d> x )
     {
         return get_complex3d_pool(vec3i
                                   (x->shape()[0],x->shape()[1],x->shape()[2]))->get();
     }
 
-    inline shared_ptr<complex3d>
+    shared_ptr<complex3d>
     get_complex3d( const vec3i& v )
     {
         vec3i vc(v[0], v[1], (v[2]/2)+1);
         return get_complex3d_pool(vc)->get();
     }
 
-    inline shared_ptr<complex3d>
+    shared_ptr<complex3d>
     get_complex3d( shared_ptr<double3d> x )
     {
         return get_complex3d(x->shape()[0], x->shape()[1], x->shape()[2] );
     }
 
     // [07/08/2013 kisuklee]
-    inline shared_ptr<bool3d>
+    shared_ptr<bool3d>
     get_bool3d( std::size_t x, std::size_t y, std::size_t z )
     {
         return get_bool3d_pool(vec3i(x,y,z))->get();
     }
 
     // [07/08/2013 kisuklee]
-    inline shared_ptr<bool3d>
+    shared_ptr<bool3d>
     get_bool3d( shared_ptr<bool3d> x )
     {
         return get_bool3d(x->shape()[0], x->shape()[1], x->shape()[2] );
     }
 
     // [07/08/2013 kisuklee]
-    inline shared_ptr<bool3d>
+    shared_ptr<bool3d>
     get_bool3d( const vec3i& v )
     {
         return get_bool3d_pool(v)->get();
     }
 
-    inline shared_ptr<long3d>
+    shared_ptr<long3d>
     get_long3d( std::size_t x, std::size_t y, std::size_t z )
     {
         return get_long3d_pool(vec3i(x,y,z))->get();
     }
 
-    inline shared_ptr<long3d>
+    shared_ptr<long3d>
     get_long3d( shared_ptr<long3d> x )
     {
         return get_long3d(x->shape()[0], x->shape()[1], x->shape()[2] );
     }
 
-    inline shared_ptr<long3d>
+    shared_ptr<long3d>
     get_long3d( shared_ptr<double3d> x )
     {
         return get_long3d(x->shape()[0], x->shape()[1], x->shape()[2] );
     }
 
-    inline shared_ptr<long3d>
+    shared_ptr<long3d>
     get_long3d( const vec3i& v )
     {
         return get_long3d_pool(v)->get();
     }
 
-    inline void clear()
+    void clear()
     {
         clear_double3d();
         clear_complex3d();

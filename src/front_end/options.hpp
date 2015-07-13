@@ -24,8 +24,6 @@
 #include <zi/zargs/parser.hpp>
 
 #include <boost/program_options.hpp>
-#include <boost/tokenizer.hpp>
-#include <boost/foreach.hpp>
 #include <boost/filesystem.hpp>
 #include <sstream>
 #include <algorithm>
@@ -51,6 +49,7 @@ public:
 	std::string 		data_path;
 	std::string 		save_path;
 	std::string 		hist_path;
+	bool				batch_template;
 
 	// [OPTIMIZE]
 	std::size_t 		n_threads;
@@ -67,6 +66,7 @@ public:
 	bool				data_aug;
 	double 				cls_thresh;
 	bool				softmax;
+	bool				mirroring;
 
 	// [UPDATE]
 	double				force_eta;
@@ -77,6 +77,7 @@ public:
 	bool				minibatch;
 	bool				norm_grad;
 	bool				rebalance;
+	bool				patch_bal;
 
 	// [MONITOR]
 	std::size_t 		n_iters;
@@ -93,18 +94,21 @@ public:
 	bool				out_filter;
 	std::string 		outname;
 	std::string 		subname;
+	bool				scan_fmaps;
+	bool				scan_all;
+	vec3i 				time_series;
 
 
 private:
 	// for parsing configuration file
 	boost::program_options::options_description desc_;
+	
 
-
-public:
+public:	
 	#define TEXT_WRITE 	(std::ios::out)
 	#define TEXT_READ	(std::ios::in)
 
-	inline void save() const
+	void save() const
 	{
 		std::string fname = save_path + "options.config";
         std::ofstream fout(fname.c_str(),TEXT_WRITE);
@@ -112,7 +116,7 @@ public:
         fout.close();
 	}
 
-	inline bool build( const std::string& fpath )
+	bool build( const std::string& fpath )
 	{
 		std::ifstream fin(fpath.c_str(),TEXT_READ);
         if ( !fin )	return false;
@@ -129,7 +133,7 @@ public:
 
 
 private:
-	inline void initialize()
+	void initialize()
 	{
 		using namespace boost::program_options;
 
@@ -140,6 +144,7 @@ private:
 	        ("PATH.data",value<std::string>(&data_path)->default_value(""),"Data path")
 	        ("PATH.save",value<std::string>(&save_path)->default_value(""),"Save path")
 	        ("PATH.hist",value<std::string>(&hist_path)->default_value(""),"Save time-stamped network")
+	        ("PATH.batch_template",value<bool>(&batch_template)->default_value(false),"Batch template")
 	        // OPTIMIZE
 	        ("OPTIMIZE.n_threads",value<std::size_t>(&n_threads)->default_value(16),"Number of threads")
 	        ("OPTIMIZE.force_fft",value<bool>(&force_fft)->default_value(false),"Force all FFTs")
@@ -154,6 +159,7 @@ private:
 	        ("TRAIN.data_aug",value<bool>(&data_aug)->default_value(false),"Data augmentation")
 	        ("TRAIN.cls_thresh",value<double>(&cls_thresh)->default_value(0.5),"Classification threshold")
 	        ("TRAIN.softmax",value<bool>(&softmax)->default_value(false),"Softmax")
+	        ("TRAIN.mirroring",value<bool>(&mirroring)->default_value(false),"Boundary mirroring")
 	        // UPDATE
 	        ("UPDATE.force_eta",value<double>(&force_eta)->default_value(0),"Force the learning rate parameter")
 	        ("UPDATE.momentum",value<double>(&momentum)->default_value(0),"Momentum")
@@ -163,6 +169,7 @@ private:
 	        ("UPDATE.minibatch",value<bool>(&minibatch)->default_value(true),"Minibatch")
 	        ("UPDATE.norm_grad",value<bool>(&norm_grad)->default_value(false),"Gradient normalization")
 	        ("UPDATE.rebalance",value<bool>(&rebalance)->default_value(false),"Rebalancing")
+	        ("UPDATE.patch_bal",value<bool>(&patch_bal)->default_value(false),"Patch-wise rebalancing")
 	        // MONITOR
 	        ("MONITOR.n_iters",value<std::size_t>(&n_iters)->default_value(1000000),"Number of training iterations")
 	        ("MONITOR.check_freq",value<std::size_t>(&check_freq)->default_value(10),"Period for saving filter and display error")
@@ -172,15 +179,18 @@ private:
 	       	("SCAN.scanner",value<std::string>(&scanner)->default_value("volume"),"Forward scanner")
 	        ("SCAN.offset",value<std::string>()->default_value("0,0,0"),"Offset to start forward scanning")
 	        ("SCAN.dim",value<std::string>()->default_value("0,0,0"),"Number of subvolumes for each dimension")
-	        ("SCAN.weight_idx",value<std::size_t>(&weight_idx)->default_value(0),"Time-stamped network weight")
+	        ("SCAN.weight_idx",value<std::size_t>(&weight_idx)->default_value(0),"Time-stamped network weight")	        
 	        ("SCAN.force_load",value<bool>(&force_load)->default_value(true),"Force load")
 	        ("SCAN.out_filter",value<bool>(&out_filter)->default_value(true),"Enable output filtering")
 	        ("SCAN.outname",value<std::string>(&outname)->default_value("out"),"Output file name")
 	        ("SCAN.subname",value<std::string>(&subname)->default_value(""),"Output file subname")
+	        ("SCAN.fmaps",value<bool>(&scan_fmaps)->default_value(false),"Scanning feature maps")
+	        ("SCAN.scan_all",value<bool>(&scan_all)->default_value(false),"Scanning all feature maps")
+	        ("SCAN.time_series",value<std::string>()->default_value("0,0,0"),"Time series scanning")
 	        ;
 	}
 
-	inline void postprocess( boost::program_options::variables_map& vm )
+	void postprocess( boost::program_options::variables_map& vm )
 	{
 		std::cout << "\n[options] postprocess" << std::endl;
 
@@ -208,7 +218,7 @@ private:
 		print_range("test_range ",test_range);
 
 		// output size
-		target.clear();
+		target.clear();		
 		source = vm["TRAIN.outsz"].as<std::string>();
 		if ( _parser.parse(&target,source) )
 		{
@@ -221,6 +231,13 @@ private:
 		if ( outsz[0]*outsz[1]*outsz[2] == 0 )
 		{
 			std::string what = "Bad output size [" + vec3i_to_string(outsz) + "]";
+			throw std::invalid_argument(what);
+		}
+
+		// rebalancing mode
+		if ( rebalance && patch_bal )
+		{
+			std::string what = "Please use either [rebalance = 1] or [patch_bal = 1]";
 			throw std::invalid_argument(what);
 		}
 
@@ -245,11 +262,22 @@ private:
 				subvol_dim[i] = target[i];
 			}
 		}
+
+		// scan time series
+		target.clear();
+		source = vm["SCAN.time_series"].as<std::string>();
+		if ( _parser.parse(&target,source) )
+		{
+			for ( std::size_t i = 0; i < target.size(); ++i )
+			{
+				time_series[i] = target[i];
+			}
+		}
 	}
 
 
 public:
-	inline friend std::ostream&
+	friend std::ostream&
 	operator<<( std::ostream& os, const options& rhs )
 	{
 		return (os << "[PATH]\n"
@@ -258,6 +286,7 @@ public:
         		   << "data=" << rhs.data_path << '\n'
         		   << "save=" << rhs.save_path << '\n'
         		   << "hist=" << rhs.hist_path << '\n'
+        		   << "batch_template=" << rhs.batch_template << '\n'
         		   << "\n[OPTIMIZE]\n"
         		   << "n_threads=" << rhs.n_threads << '\n'
         		   << "force_fft=" << rhs.force_fft << '\n'
@@ -272,6 +301,7 @@ public:
         		   << "data_aug=" << rhs.data_aug << '\n'
         		   << "cls_thresh=" << rhs.cls_thresh << '\n'
         		   << "softmax=" << rhs.softmax << '\n'
+        		   << "mirroring=" << rhs.mirroring << '\n'
         		   << "\n[UPDATE]\n"
         		   << "force_eta=" << rhs.force_eta << '\n'
         		   << "momentum=" << rhs.momentum << '\n'
@@ -281,6 +311,7 @@ public:
         		   << "minibatch=" << rhs.minibatch << '\n'
         		   << "norm_grad=" << rhs.norm_grad << '\n'
         		   << "rebalance=" << rhs.rebalance << '\n'
+        		   << "patch_bal=" << rhs.patch_bal << '\n'
         		   << "\n[MONITOR]\n"
         		   << "n_iters=" << rhs.n_iters << '\n'
         		   << "check_freq=" << rhs.check_freq << '\n'
@@ -294,12 +325,16 @@ public:
         		   << "force_load=" << rhs.force_load << '\n'
         		   << "out_filter=" << rhs.out_filter << '\n'
         		   << "outname=" << rhs.outname << '\n'
-        		   << "subname=" << rhs.subname << '\n');
+        		   << "subname=" << rhs.subname << '\n'
+        		   << "fmaps=" << rhs.scan_fmaps << '\n'
+        		   << "scan_all=" << rhs.scan_all << '\n'
+        		   << "time_series=" << vec3i_to_string(rhs.time_series) << '\n'
+        		);
 	}
 
 
 public:
-	inline batch_list get_batch_range() const
+	batch_list get_batch_range() const
 	{
 		batch_list ret = train_range;
 
@@ -314,9 +349,9 @@ public:
 	// [01/28/2014 kisuklee]
 	// The following create_something() methods should be replaced by
 	// object factory design pattern later on
-	inline cost_fn_ptr create_cost_function()
+	cost_fn_ptr create_cost_function()
 	{
-		cost_fn_ptr ret;
+		cost_fn_ptr ret;	
 		if ( cost_fn == "square" )
 		{
 			ret = cost_fn_ptr(new square_cost_fn);
@@ -342,87 +377,8 @@ public:
 	}
 
 
-private:
-	inline batch_list parse_batch_range( const std::string s )
-	{
-		batch_list ret;
-
-		using namespace boost;
-		char_separator<char> sep(",");
-		tokenizer< char_separator<char> > tokens(s, sep);
-		BOOST_FOREACH( const std::string& t, tokens )
-		{
-			// parsing
-			std::string::size_type pos = t.find("-");
-			if ( pos != std::string::npos )
-			{
-				batch_list lst = parse_range_str(t);
-				ret.insert(ret.end(), lst.begin(), lst.end());
-			}
-			else
-			{
-				std::size_t n;
-				std::istringstream convert(t);
-				if ( !(convert >> n) )
-				{
-					std::string what = "Invalid range [" + t + "]";
-					throw std::invalid_argument(what);
-				}
-				ret.push_back(n);
-			}
-		}
-
-		// unique and sorted
-		std::sort(ret.begin(), ret.end());
-		ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
-		return ret;
-	}
-
-	inline batch_list parse_range_str( const std::string s )
-	{
-		batch_list ret;
-
-		std::string::size_type pos = s.find("-");
-		ZI_ASSERT( pos != std::string::npos );
-
-		std::string s1 = s.substr(0,pos);
-		std::string s2 = s.substr(pos+1);
-
-		std::size_t n1, n2;
-		std::istringstream convert1(s1);
-		std::istringstream convert2(s2);
-		if ( !(convert1 >> n1) || !(convert2 >> n2) )
-		{
-			std::string what = "Invalid range [" + s + "]";
-			throw std::invalid_argument(what);
-		}
-
-		for ( std::size_t i = n1; i <= n2; ++i )
-			ret.push_back(i);
-
-		return ret;
-	}
-
-	inline void print_range( const std::string& name, const batch_list& range )
-	{
-		std::cout << name << " [";
-		if ( range.empty() )
-		{
-			std::cout << "empty]" << std::endl;
-			return;
-		}
-
-		std::cout << range.at(0);
-		for ( std::size_t i = 1; i < range.size(); ++i )
-		{
-			std::cout << "," << range.at(i);
-		}
-		std::cout << "]" << std::endl;
-	}
-
-
 public:
-	inline void path_check()
+	void path_check()
 	{
 		std::cout << "\n[options] path_check" << std::endl;
 		check_config_path();
@@ -435,7 +391,7 @@ public:
 
 private:
 
-	inline void check_config_path() const
+	void check_config_path() const
 	{
 		boost::filesystem::path config_file(config_path);
 
@@ -444,8 +400,8 @@ private:
 		{
 			std::string what = "Non-existent config path [" + config_path + "]";
 			throw std::invalid_argument(what);
-		}
-
+		}		
+		
 		if ( boost::filesystem::is_directory(config_file) )
 		{
 			std::string what = "Non-file config path [" + config_path + "]";
@@ -455,7 +411,7 @@ private:
 		std::cout << "Config path [" << config_path << "]" << std::endl;
 	}
 
-	inline void check_load_path()
+	void check_load_path()
 	{
 		// load path is allowed to be empty
 		if ( load_path.empty() )
@@ -471,13 +427,13 @@ private:
 			std::string what = "Non-existent load path [" + load_path + "]";
 			throw std::invalid_argument(what);
 		}
-
+		
 		if ( !boost::filesystem::is_directory(load_dir) )
 		{
 			std::string what = "Non-directory load path [" + load_path + "]";
 			throw std::invalid_argument(what);
 		}
-
+		
 		if ( *load_path.rbegin() != '/' )
 		{
 			load_path = load_path + "/";
@@ -485,7 +441,7 @@ private:
 		std::cout << "Load path   [" << load_path << "]" << std::endl;
 	}
 
-	inline void check_save_path()
+	void check_save_path()
 	{
 		// save path is allowed to be empty
 		if ( save_path.empty() )
@@ -496,13 +452,13 @@ private:
 
 		boost::filesystem::path save_dir(save_path);
 
-		// save path is not allowed to be empty
+		// save path is not allowed to be empty		
 		if ( !boost::filesystem::exists(save_dir) )
 		{
 			std::string what = "Non-existent save path [" + save_path + "]";
 			throw std::invalid_argument(what);
 		}
-
+		
 		if ( !boost::filesystem::is_directory(save_dir) )
 		{
 			std::string what = "Non-directory save path [" + save_path + "]";
@@ -516,7 +472,7 @@ private:
 		std::cout << "Save path   [" << save_path << "]" << std::endl;
 	}
 
-	inline void check_hist_path()
+	void check_hist_path()
 	{
 		// hist path is allowed to be empty
 		if ( hist_path.empty() )
@@ -524,7 +480,7 @@ private:
 			std::cout << "Hist path   [empty]" << std::endl;
 			return;
 		}
-
+		
 		boost::filesystem::path hist_dir(hist_path);
 
 		if ( !boost::filesystem::exists(hist_dir) )
@@ -532,13 +488,13 @@ private:
 			std::string what = "Non-existent hist path [" + hist_path + "]";
 			throw std::invalid_argument(what);
 		}
-
+		
 		if ( !boost::filesystem::is_directory(hist_dir) )
 		{
 			std::string what = "Non-directory hist path [" + hist_path + "]";
 			throw std::invalid_argument(what);
 		}
-
+		
 		if ( *hist_path.rbegin() != '/' )
 		{
 			hist_path = hist_path + "/";
@@ -552,12 +508,13 @@ public:
 		: outsz(vec3i::one)
 		, scan_offset(vec3i::zero)
 		, subvol_dim(vec3i::zero)
+		, time_series(vec3i::zero)
 	{
 		initialize();
-
+		
 		if ( !build(path) )
 		{
-			std::string what
+			std::string what 
 				= "Failed to build training options from the file [" + path + "]";
 			throw std::invalid_argument(what);
 		}

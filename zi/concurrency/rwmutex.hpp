@@ -31,13 +31,11 @@
 #  error "threading platform not supported"
 #endif
 
-#include <zi/utility/non_copyable.hpp>
-
 namespace zi {
 typedef concurrency_::rwmutex_impl rwmutex;
 
 template< class Class >
-class class_rwmutex: public rwmutex
+class class_rwmutex: private rwmutex
 {
 public:
 
@@ -68,27 +66,27 @@ public:
         return class_rwmutex< Class >::instance().try_acquire_write();
     }
 
-    static void acquire_read()
+    static bool acquire_read()
     {
-        class_rwmutex< Class >::instance().acquire_read();
+        return class_rwmutex< Class >::instance().acquire_read();
     }
 
-    static void acquire_write()
+    static bool acquire_write()
     {
-        class_rwmutex< Class >::instance().acquire_write();
+        return class_rwmutex< Class >::instance().acquire_write();
     }
 
-    static void release_read()
+    static bool release_read()
     {
-        class_rwmutex< Class >::instance().release_read();
+        return class_rwmutex< Class >::instance().release_read();
     }
 
-    static void release_write()
+    static bool release_write()
     {
-        class_rwmutex< Class >::instance().release_write();
+        return class_rwmutex< Class >::instance().release_write();
     }
 
-    class read_guard: zi::non_copyable
+    class read_guard: non_copyable
     {
     public:
         read_guard()
@@ -102,7 +100,7 @@ public:
         }
     };
 
-    class write_guard: zi::non_copyable
+    class write_guard: non_copyable
     {
     public:
         write_guard()

@@ -17,10 +17,11 @@
 //
 
 #ifndef ZI_ZARGS_ZARGS_HPP
-#define ZI_ZARGS_ZARGS_HPP
+#define ZI_ZARGS_ZARGS_HPP 1
 
 #include <zi/zargs/arguments.hpp>
 #include <zi/utility/exception.hpp>
+
 #include <zi/bits/cstdint.hpp>
 
 #define ZiARG_DEFINITION( _name, _default, _desc, _type, _type_str)     \
@@ -37,30 +38,30 @@
                                                                         \
         public:                                                         \
                                                                         \
-            inline arg_handler_ ## _name()                                     \
+            arg_handler_ ## _name()                                     \
             {                                                           \
                 zi::zargs_::arguments::instance().                      \
                     register_handler( this );                           \
             }                                                           \
                                                                         \
-            inline std::string get_name() const                                \
+            std::string get_name() const                                \
             {                                                           \
                 return #_name;                                          \
             }                                                           \
-            inline std::string get_type() const                                \
+            std::string get_type() const                                \
             {                                                           \
                 return #_type_str;                                      \
             }                                                           \
-            inline std::string get_default() const                             \
+            std::string get_default() const                             \
             {                                                           \
                 return #_default;                                       \
             }                                                           \
-            inline std::string get_description() const                         \
+            std::string get_description() const                         \
             {                                                           \
                 return _desc;                                           \
             }                                                           \
                                                                         \
-            inline bool parse( std::list< std::string > &q )                   \
+            bool parse( std::list< std::string > &q )                   \
             {                                                           \
                 if ( matcher_.match( #_name, q ) )                      \
                 {                                                       \
@@ -195,3 +196,4 @@
 // TODO: nicer default values for lists/sets/...
 
 #endif
+
