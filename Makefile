@@ -1,8 +1,8 @@
 ODIR		=	./bin
 CPP		=	g++
 CPP_FLAGS	= 	-g
-INC_FLAGS	=	-I. -I./src -I./zi -I/usr/local/boost/1.55.0/boost 
-LIB_FLAGS	=	-L. -L/usr/local/boost/1.55.0/lib64
+INC_FLAGS	=	-I. -I./src -I./zi -I/usr/local/boost/1.55.0/boost -I/opt/boost/include
+LIB_FLAGS	=	-L. -L/usr/local/boost/1.55.0/lib64 -L/opt/boost/lib
 OPT_FLAGS	=	-DNDEBUG -O3 -march=native
 OTH_FLAGS	=	-Wall -Wextra -Wno-unused-variable
 
