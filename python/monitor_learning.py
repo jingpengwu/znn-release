@@ -25,14 +25,14 @@ Dir = '../experiments/VeryDeep2HR_w65x9_bak/network/'
 #Dir = '../experiments/W2_L8_3/network/'
 #Dir = '../experiments/W3_C10_P2_D2/network/'
 # Dir = '../experiments/W4_C13_P3_D3/network/'
-Dir = '../experiments/W5_C10_P3_D2/network3/'
+Dir = '../experiments/W5_C10_P3_D2/network2/'
 #Dir = '../experiments/W6_C13_P3_D3/network/'
 #Dir = '../experiments/W7_C11_P3_D3/network/'
 #Dir = '../experiments/W9_C8_P3_D3/network/'
 #Dir = '../experiments/W59_C10_P3_D3/network/'
 #Dir = '../experiments/W12_C5_P3_D3/network/'
 #Dir = '../experiments/W10_C10_P3_D3/network/'
-#Dir = '../experiments/W14_C8_P3_D3/network/'
+#Dir = '../experiments/W14_C9_P3_D3_A/network/'
 
 # AWS training, fist: cluster name, second: path
 #Dir = ("jingpeng1", "/home/znn-release/experiments/W10_C10_P3_D3/network/")

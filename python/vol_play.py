@@ -27,7 +27,7 @@ out_fname = '../experiments/VeryDeep2HR_w65x9/output/out{}.{}'.format( batchid, 
 #out_fname = '../experiments/W10_C10_P3_D3/output/out{}.2'.format( batchid )
 
 # AWS filenames
-out_fname = ("jingpeng1", "/home/znn-release/", "experiments/W10_C10_P3_D3/output/", "out{}.{}".format( batchid, ad ))
+#out_fname = ("jingpeng1", "/home/znn-release/", "experiments/W10_C10_P3_D3/output/", "out{}.{}".format( batchid, ad ))
 #out_fname = ("jingpeng2", "/home/znn-release/", "experiments/VeryDeep2HR_w65x9/output/", "out{}.{}".format( batchid, ad ))
 #out_fname = ("jingpeng3", "/home/znn-release/", "experiments/W14_C8_P3_D3/output/", "out{}.{}".format( batchid, ad ))
 
@@ -70,5 +70,5 @@ out[ zoff:zc-zoff, yoff:yc-yoff, xoff:xc-xoff ] = out1
 #%%
 import emirt
 #emirt.show.vol_slider(vol, cmap='gray')
-com = emirt.show.CompareVol(chann, out)
+com = emirt.show.CompareVol((chann, out))
 com.vol_compare_slice()
